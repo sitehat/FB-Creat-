@@ -89,7 +89,7 @@
                         <span class="btn-number">1</span>
                         New Fb Account
                     </div>
-                    <i class="bi bi-lock-fill text-danger" id="lockIcon"></i>
+                    <i class="bi bi-chevron-right text-muted" id="lockIcon"></i>
                 </div>
 
                 <a href="https://t.me/hasanroni993" class="action-btn">
@@ -146,22 +146,19 @@
                 <div class="modal-body">
                     <label class="form-label text-muted small fw-semibold">Registration ID</label>
                     <div class="input-group mb-3">
-                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
+                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Generating...">
                         <button class="btn btn-primary" onclick="copyRegId()">Copy</button>
                     </div>
 
                     <label class="form-label text-muted small fw-semibold">Subscription Status</label>
                     <div id="statusBadgeContainer" class="mb-3">
-                        <span class="badge bg-danger p-2" id="modalStatusBadge">Inactive (Expired)</span>
+                        <span class="badge bg-success p-2" id="modalStatusBadge">Active (Lifetime)</span>
                     </div>
 
                     <div class="recharge-box small">
-                        <div class="fw-bold text-primary mb-1">30 Days Package (30 TK)</div>
-                        <div class="text-dark fw-semibold mb-1">bKash / Nagad: <span class="text-primary">01326027993</span></div>
-                        <p class="text-muted mb-2" style="font-size: 0.8rem;">
-                            আইডি কপি করে সেন্ড মানি করার পর টেলিগ্রাম/হোয়াটসঅ্যাপে আপনার আইডি জানান।
-                        </p>
-                        <div class="d-flex gap-2">
+                        <div class="fw-bold text-primary mb-1">Support & Contact</div>
+                        <div class="text-dark fw-semibold mb-1">Telegram / WhatsApp: <span class="text-primary">01326027993</span></div>
+                        <div class="d-flex gap-2 mt-2">
                             <a href="https://wa.me/8801326027993" class="btn btn-success btn-sm w-50">WhatsApp</a>
                             <a href="https://t.me/hasanroni993" class="btn btn-info text-white btn-sm w-50">Telegram</a>
                         </div>
@@ -177,53 +174,48 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-            checkStatusUI();
+            getOrGenerateRegId();
         });
 
-        function checkStatusUI() {
-            if (window.AndroidBridge) {
-                const regId = window.AndroidBridge.getRegId();
-                document.getElementById('modalRegId').value = regId;
-
-                const isActive = window.AndroidBridge.isAccountActive();
-                const badge = document.getElementById('modalStatusBadge');
-                const lockIcon = document.getElementById('lockIcon');
-
-                if (isActive) {
-                    badge.className = "badge bg-success p-2";
-                    badge.innerHTML = "Active (30 Days)";
-                    lockIcon.className = "bi bi-chevron-right text-muted";
-                } else {
-                    badge.className = "badge bg-danger p-2";
-                    badge.innerHTML = "Inactive (Expired)";
-                    lockIcon.className = "bi bi-lock-fill text-danger";
-                }
+        // ব্রাউজারের লোকাল স্টোরেজে ইউনিক আইডি তৈরি ও সেভ করার ফাংশন (যা কখনো মুছবে না)
+        function getOrGenerateRegId() {
+            let regId = localStorage.getItem('fb_creat_reg_id');
+            if (!regId) {
+                const randomHex = Math.random().toString(36).substring(2, 8).toUpperCase();
+                regId = "FBC-" + randomHex;
+                localStorage.setItem('fb_creat_reg_id', regId);
             }
+            document.getElementById('modalRegId').value = regId;
+            return regId;
         }
 
         function openProfileModal() {
-            checkStatusUI();
+            getOrGenerateRegId();
             profileModal.show();
         }
 
         function copyRegId() {
             const regId = document.getElementById('modalRegId').value;
-            if (window.AndroidBridge) {
-                window.AndroidBridge.copyToClipboardJs(regId);
-            }
+            navigator.clipboard.writeText(regId).then(function() {
+                alert("Registration ID Copied: " + regId);
+            }, function(err) {
+                // ফলব্যাক কপি মেথড
+                const textBox = document.getElementById('modalRegId');
+                textBox.select();
+                document.execCommand('copy');
+                alert("Registration ID Copied: " + regId);
+            });
         }
 
         function handleNewFbAccount() {
             if (window.AndroidBridge) {
-                const isActive = window.AndroidBridge.isAccountActive();
-                if (isActive) {
-                    window.AndroidBridge.openFbLite();
-                } else {
-                    openProfileModal();
-                }
+                window.AndroidBridge.openFbLite();
+            } else {
+                // সরাসরি ব্রাউজার বা ফেসবুক ওপেন করার বিকল্প
+                window.location.href = "https://m.facebook.com/";
             }
         }
     </script>
 </body>
-    </html>
-    
+                    </html>
+        
