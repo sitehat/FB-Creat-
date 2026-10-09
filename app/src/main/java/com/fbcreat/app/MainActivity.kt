@@ -240,7 +240,7 @@ class MainActivity : AppCompatActivity() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com")
         if (!cookies.isNullOrEmpty()) {
             copyToClipboard("Cookies", cookies)
-            Toast.makeText(this, "Cookies Copied Successfully!", Toast.NET_SHORT).show()
+            Toast.makeText(this, "Cookies Copied Successfully!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, "No Cookies Found!", Toast.LENGTH_SHORT).show()
         }
