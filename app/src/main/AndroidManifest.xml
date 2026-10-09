@@ -2,26 +2,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- আধুনিক অ্যান্ড্রয়েড ডিভাইসে টেলিগ্রাম এবং হোয়াটসঅ্যাপ লিঙ্ক সরাসরি ওপেন করার জন্য পারমিশন -->
+    <queries>
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.whatsapp" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="FCB"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FBCreat">
-
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        
         <activity
             android:name=".MainActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
-
     </application>
-
 </manifest>
-
