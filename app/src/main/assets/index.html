@@ -45,7 +45,29 @@
         .card-title { font-size: 16px; font-weight: 700; color: #0f172a; }
         .card-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
 
-        /* Footer */
+        /* Modal / Profile Popup */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-in-out; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .modal-header h3 { font-size: 18px; color: #0f172a; }
+        .close-btn { font-size: 22px; cursor: pointer; color: #64748b; }
+        
+        .info-box { margin-bottom: 14px; }
+        .info-box label { font-size: 12px; color: #64748b; font-weight: 600; display: block; margin-bottom: 4px; }
+        .reg-id-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; font-weight: 700; color: #1e293b; font-size: 15px; }
+        .btn-copy { background: #1877f2; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        
+        .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .status-badge.inactive { background: #fee2e2; color: #ef4444; }
+        .status-badge.active { background: #d1fae5; color: #10b981; }
+
+        .recharge-box { background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 10px; padding: 12px; margin-top: 14px; font-size: 12px; color: #1e3a8a; }
+        .recharge-box h4 { margin-bottom: 6px; color: #1d4ed8; font-size: 13px; }
+        .contact-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-contact { flex: 1; text-decoration: none; padding: 8px; border-radius: 6px; text-align: center; color: white; font-weight: 600; font-size: 12px; }
+        .btn-wa { background: #25d366; }
+        .btn-tg { background: #229ed9; }
+
         footer { background: #0f172a; color: white; text-align: center; padding: 12px; font-size: 12px; font-weight: 600; margin-top: 24px; }
         footer span { color: #38bdf8; }
     </style>
@@ -60,7 +82,7 @@
             <a onclick="document.getElementById('about-card').scrollIntoView({behavior:'smooth'})">About us</a>
             <a onclick="document.getElementById('support-card').scrollIntoView({behavior:'smooth'})">Support</a>
         </nav>
-        <button class="btn-profile">
+        <button class="btn-profile" onclick="openProfileModal()">
             <i class="fa-solid fa-user"></i> My profile
         </button>
     </header>
@@ -132,20 +154,97 @@
         </div>
     </div>
 
+    <!-- My Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-gear"></i> My Profile</h3>
+                <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <label>Registration ID</label>
+                    <div class="reg-id-box">
+                        <span id="txtRegId">FBC-LOADING</span>
+                        <button class="btn-copy" onclick="copyRegId()"><i class="fa-solid fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <label>Subscription Status</label>
+                    <div>
+                        <span id="badgeStatus" class="status-badge inactive">🔴 Inactive (Expired)</span>
+                    </div>
+                </div>
+
+                <div class="recharge-box">
+                    <h4><i class="fa-solid fa-bolt"></i> 30 Days Package (30 TK)</h4>
+                    <p><b>bKash / Nagad (Personal):</b> 01326027993</p>
+                    <p style="margin-top: 4px; font-size: 11px;">উপরের আইডিটি কপি করে বিকাশ/নগদে ৩০ টাকা সেন্ড মানি করুন এবং আপনার আইডিটি হোয়াটসঅ্যাপ/টেলিগ্রামে জানান।</p>
+                    <div class="contact-btns">
+                        <a href="https://wa.me/8801326027993" target="_blank" class="btn-contact btn-wa"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                        <a href="https://t.me/hasanroni993" target="_blank" class="btn-contact btn-tg"><i class="fa-brands fa-telegram"></i> Telegram</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         Powered by <span>Hasan</span>
     </footer>
 
     <script>
-        function startFbAccount() {
-            if (window.AndroidBridge && window.AndroidBridge.openFbLite) {
-                window.AndroidBridge.openFbLite();
+        function openProfileModal() {
+            if (window.AndroidBridge && window.AndroidBridge.getRegId) {
+                var id = window.AndroidBridge.getRegId();
+                document.getElementById('txtRegId').innerText = id;
+
+                var isActive = window.AndroidBridge.isAccountActive();
+                var badge = document.getElementById('badgeStatus');
+                if (isActive) {
+                    badge.className = 'status-badge active';
+                    badge.innerHTML = '🟢 Active (30 Days)';
+                } else {
+                    badge.className = 'status-badge inactive';
+                    badge.innerHTML = '🔴 Inactive (Expired)';
+                }
+            }
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function copyRegId() {
+            var regId = document.getElementById('txtRegId').innerText;
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboardJs) {
+                window.AndroidBridge.copyToClipboardJs(regId);
             } else {
-                window.location.href = 'https://m.facebook.com/';
+                navigator.clipboard.writeText(regId);
+                alert("Copied: " + regId);
+            }
+        }
+
+        function startFbAccount() {
+            if (window.AndroidBridge && window.AndroidBridge.isAccountActive) {
+                if (window.AndroidBridge.isAccountActive()) {
+                    window.AndroidBridge.openFbLite();
+                } else {
+                    alert('আপনার ৩০ দিনের প্যাকেজটি অ্যাক্টিভ নয়! অনুগ্রহ করে My Profile থেকে রিচার্জ করুন।');
+                    openProfileModal();
+                }
+            } else {
+                if (window.AndroidBridge && window.AndroidBridge.openFbLite) {
+                    window.AndroidBridge.openFbLite();
+                } else {
+                    window.location.href = 'https://m.facebook.com/';
+                }
             }
         }
     </script>
 </body>
-  </html>
-  
+                        </html>
+                        
