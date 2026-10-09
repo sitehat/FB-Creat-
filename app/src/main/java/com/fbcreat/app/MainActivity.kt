@@ -5,11 +5,16 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -18,6 +23,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var btnFloatingPlus: CardView
     private lateinit var panelTools: CardView
+
+    // 🔴 আপনার ফায়ারবেস ডাটাবেজ URL (আপনার স্ক্রিনশট অনুযায়ী সেট করা)
+    private val FIREBASE_DATABASE_URL = "https://fb--creat-default-rtdb.firebaseio.com"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,13 +72,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 1. Floating Plus (+) Click -> Open Panel
+        // 1. Floating Plus (+) Click
         btnFloatingPlus.setOnClickListener {
             btnFloatingPlus.visibility = View.GONE
             panelTools.visibility = View.VISIBLE
         }
 
-        // 2. Minimize (-) Click -> Close Panel to Plus (+)
+        // 2. Minimize (-) Click
         btnMinimize.setOnClickListener {
             panelTools.visibility = View.GONE
             btnFloatingPlus.visibility = View.VISIBLE
@@ -81,7 +89,7 @@ class MainActivity : AppCompatActivity() {
             extractProfileLink()
         }
 
-        // 4. Authentic Action (Extract KEY + Generate 6-digit 2FA Code)
+        // 4. Authentic Action
         btnAuthentic.setOnClickListener {
             extract2FAKeyAndCode()
         }
@@ -101,22 +109,76 @@ class MainActivity : AppCompatActivity() {
             extractEmailCode()
         }
 
+        // Sync subscription from Firebase on App Start
+        syncSubscriptionFromFirebase()
+
         // Load Main App Dashboard
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // Function to launch Facebook Lite/Mobile Web
+    // Check Firebase for Active Status
+    private fun syncSubscriptionFromFirebase() {
+        val regId = getOrCreateRegId()
+        val apiUrl = "$FIREBASE_DATABASE_URL/users/$regId.json"
+
+        Thread {
+            try {
+                val url = URL(apiUrl)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+
+                if (conn.responseCode == 200) {
+                    val response = conn.inputStream.bufferedReader().readText()
+                    if (response.isNotEmpty() && response != "null") {
+                        val json = JSONObject(response)
+                        val expiryTime = json.optLong("expiry_time", 0L)
+                        
+                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                        prefs.edit().putLong("expiry_time", expiryTime).apply()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    // Generate or get Unique Device Registration ID
+    private fun getOrCreateRegId(): String {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        var id = prefs.getString("reg_id", null)
+        if (id == null) {
+            val androidId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            val shortHash = if (!androidId.isNullOrEmpty()) {
+                androidId.takeLast(6).uppercase()
+            } else {
+                UUID.randomUUID().toString().replace("-", "").take(6).uppercase()
+            }
+            id = "FBC-$shortHash"
+            prefs.edit().putString("reg_id", id).apply()
+        }
+        return id
+    }
+
+    // Check Subscription Expiry
+    private fun isAccountActive(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val expiryTime = prefs.getLong("expiry_time", 0L)
+        return System.currentTimeMillis() < expiryTime
+    }
+
+    // Launch Facebook Lite / Mobile Web
     fun openFbLite() {
         runOnUiThread {
             webView.loadUrl("https://m.facebook.com/")
         }
     }
 
-    // Extract Profile UID or Profile Link
     private fun extractProfileLink() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com") ?: ""
         var uid = ""
-        
         val cookiePairs = cookies.split(";")
         for (pair in cookiePairs) {
             val parts = pair.trim().split("=")
@@ -125,7 +187,6 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-
         if (uid.isNotEmpty()) {
             copyToClipboard("Profile UID", uid)
             Toast.makeText(this, "Profile UID Copied: $uid", Toast.LENGTH_SHORT).show()
@@ -136,7 +197,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Extract 2FA Secret Key and generate 6-digit TOTP Code
     private fun extract2FAKeyAndCode() {
         webView.evaluateJavascript(
             "(function() { " +
@@ -149,28 +209,20 @@ class MainActivity : AppCompatActivity() {
             if (cleanKey.isNotEmpty() && cleanKey != "null") {
                 val totpCode = generateTOTP(cleanKey)
                 val finalResult = if (totpCode.isNotEmpty()) "$cleanKey | $totpCode" else cleanKey
-                
                 copyToClipboard("2FA Key & Code", finalResult)
-                
-                if (totpCode.isNotEmpty()) {
-                    Toast.makeText(this, "KEY & Code Copied:\nKEY: $cleanKey\nCode: $totpCode", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this, "KEY Copied: $cleanKey", Toast.LENGTH_LONG).show()
-                }
+                Toast.makeText(this, "KEY & Code Copied:\nKEY: $cleanKey\nCode: $totpCode", Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(this, "2FA Key not found on current page!", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // Helper: Base32 Decoder
     private fun decodeBase32(base32: String): ByteArray {
         val cleanBase32 = base32.replace("\\s+".toRegex(), "").replace("=", "").uppercase()
         val base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
         var bits = 0
         var bitCount = 0
         val bytes = ArrayList<Byte>()
-
         for (c in cleanBase32) {
             val valIndex = base32Chars.indexOf(c)
             if (valIndex == -1) continue
@@ -184,12 +236,10 @@ class MainActivity : AppCompatActivity() {
         return bytes.toByteArray()
     }
 
-    // Helper: TOTP Generator (Time-based One-Time Password)
     private fun generateTOTP(base32Key: String): String {
         return try {
             val keyBytes = decodeBase32(base32Key)
             if (keyBytes.isEmpty()) return ""
-            
             val timeStep = System.currentTimeMillis() / 1000 / 30
             val data = ByteArray(8)
             var value = timeStep
@@ -197,18 +247,15 @@ class MainActivity : AppCompatActivity() {
                 data[i] = (value and 0xFFL).toByte()
                 value = value shr 8
             }
-
             val signKey = SecretKeySpec(keyBytes, "HmacSHA1")
             val mac = Mac.getInstance("HmacSHA1")
             mac.init(signKey)
             val hash = mac.doFinal(data)
-
             val offset = hash[hash.size - 1].toInt() and 0x0F
             val binary = ((hash[offset].toInt() and 0x7F) shl 24) or
                          ((hash[offset + 1].toInt() and 0xFF) shl 16) or
                          ((hash[offset + 2].toInt() and 0xFF) shl 8) or
                          (hash[offset + 3].toInt() and 0xFF)
-
             val otp = binary % 1000000
             String.format("%06d", otp)
         } catch (e: Exception) {
@@ -216,7 +263,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Extract Facebook Cookies
     private fun extractCookies() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com")
         if (!cookies.isNullOrEmpty()) {
@@ -227,7 +273,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Clear All Cache, Data & Cookies
     private fun clearAppData() {
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
@@ -235,12 +280,10 @@ class MainActivity : AppCompatActivity() {
         webView.clearCache(true)
         webView.clearHistory()
         webView.clearFormData()
-        
         Toast.makeText(this, "Data Cleared! Reloading FB...", Toast.LENGTH_SHORT).show()
         webView.loadUrl("https://m.facebook.com/")
     }
 
-    // Extract Email Verification Code (OTP)
     private fun extractEmailCode() {
         webView.evaluateJavascript(
             "(function() { " +
@@ -280,6 +323,24 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun openFbLite() {
             this@MainActivity.openFbLite()
+        }
+
+        @JavascriptInterface
+        fun getRegId(): String {
+            return this@MainActivity.getOrCreateRegId()
+        }
+
+        @JavascriptInterface
+        fun isAccountActive(): Boolean {
+            return this@MainActivity.isAccountActive()
+        }
+
+        @JavascriptInterface
+        fun copyToClipboardJs(text: String) {
+            runOnUiThread {
+                this@MainActivity.copyToClipboard("Registration ID", text)
+                Toast.makeText(this@MainActivity, "Registration ID Copied: $text", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
