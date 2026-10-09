@@ -49,6 +49,24 @@
             font-size: 0.9rem;
             margin-right: 12px;
         }
+        /* কাস্টম পপআপ বক্স যা ১০০% কাজ করবে */
+        #customModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-box {
+            background: #fff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
         .recharge-box {
             background-color: #eef5ff;
             border: 1px dashed #0d6efd;
@@ -60,7 +78,7 @@
 </head>
 <body>
 
-    <!-- Header Navbar - My Profile সবসময় খোলা থাকবে -->
+    <!-- Header Navbar -->
     <nav class="navbar navbar-expand bg-white shadow-sm px-2 sticky-top">
         <div class="container-fluid d-flex align-items-center justify-content-between">
             <a class="navbar-brand text-primary m-0" href="#">
@@ -69,7 +87,6 @@
             <div class="d-flex align-items-center gap-2">
                 <a href="#" class="nav-link text-primary small fw-bold">Home</a>
                 <a href="https://t.me/hasanroni993" class="nav-link text-secondary small">Support</a>
-                <!-- মাই প্রোফাইল বাটন যা যেকোনো সময় ইউজার আইডি দেখতে সাহায্য করবে -->
                 <button class="btn btn-primary btn-sm rounded-pill px-2 py-1 small" onclick="openProfileModal()">
                     <i class="bi bi-person-circle"></i> My profile
                 </button>
@@ -84,7 +101,6 @@
             <p class="text-muted small">Your Smart Solution for Social Media and Email</p>
 
             <div class="mt-4">
-                <!-- ১ নম্বর অপশন: সাবস্ক্রিপশন থাকলে খুলবে, না থাকলে মাই প্রোফাইলে নিয়ে যাবে -->
                 <div class="action-btn" onclick="handleNewFbAccount()">
                     <div>
                         <span class="btn-number">1</span>
@@ -119,7 +135,6 @@
             </div>
         </div>
 
-        <!-- Support Card -->
         <div class="main-card d-flex align-items-center gap-3">
             <div class="bg-success text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width:45px; height:45px;">
                 <i class="bi bi-headset fs-5"></i>
@@ -131,57 +146,49 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="text-center py-2 bg-dark text-white-50 small">
         Powered by <span class="text-white fw-semibold">Hasan</span>
     </footer>
 
-    <!-- My Profile Modal (যেখানে ইউজার আইডি ও পেমেন্ট ইনফো থাকবে) -->
-    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-person-gear me-2"></i>My Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label text-muted small fw-semibold">Registration ID (Copy this)</label>
-                    <div class="input-group mb-3">
-                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
-                        <button class="btn btn-primary" onclick="copyRegId()">Copy</button>
-                    </div>
+    <!-- কাস্টম মাই প্রোফাইল পপআপ (১০০% গ্যারান্টিড ওপেন হবে) -->
+    <div id="customModal">
+        <div class="modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="bi bi-person-gear me-2"></i>My Profile</h5>
+                <button type="button" class="btn-close" onclick="closeProfileModal()"></button>
+            </div>
+            
+            <label class="form-label text-muted small fw-semibold">Registration ID</label>
+            <div class="input-group mb-3">
+                <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
+                <button class="btn btn-primary" onclick="copyRegId()">Copy</button>
+            </div>
 
-                    <label class="form-label text-muted small fw-semibold">Subscription Status</label>
-                    <div id="statusBadgeContainer" class="mb-3">
-                        <span class="badge bg-danger p-2" id="modalStatusBadge">Inactive (Expired)</span>
-                    </div>
+            <label class="form-label text-muted small fw-semibold">Subscription Status</label>
+            <div class="mb-3">
+                <span class="badge bg-danger p-2" id="modalStatusBadge">Inactive (Locked)</span>
+            </div>
 
-                    <div class="recharge-box small">
-                        <div class="fw-bold text-primary mb-1">30 Days Package (30 TK)</div>
-                        <div class="text-dark fw-semibold mb-1">bKash / Nagad: <span class="text-primary">01326027993</span></div>
-                        <p class="text-muted mb-2" style="font-size: 0.8rem;">
-                            আপনার আইডি কপি করে সেন্ড মানি করুন, এরপর WhatsApp বা Telegram-এ আপনার আইডি পাঠিয়ে ৩০ দিনের মেয়াদ সচল করে নিন।
-                        </p>
-                        <div class="d-flex gap-2">
-                            <a href="https://wa.me/8801326027993" class="btn btn-success btn-sm w-50">WhatsApp</a>
-                            <a href="https://t.me/hasanroni993" class="btn btn-info text-white btn-sm w-50">Telegram</a>
-                        </div>
-                    </div>
+            <div class="recharge-box small">
+                <div class="fw-bold text-primary mb-1">30 Days Package (30 TK)</div>
+                <div class="text-dark fw-semibold mb-1">bKash / Nagad: <span class="text-primary">01326027993</span></div>
+                <p class="text-muted mb-2" style="font-size: 0.8rem;">
+                    আইডি কপি করে সেন্ড মানি করার পর টেলিগ্রাম বা হোয়াটসঅ্যাপে আপনার আইডি জানান।
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="https://wa.me/8801326027993" class="btn btn-success btn-sm w-50">WhatsApp</a>
+                    <a href="https://t.me/hasanroni993" class="btn btn-info text-white btn-sm w-50">Telegram</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
     <script>
-        let profileModal;
-
         document.addEventListener("DOMContentLoaded", function() {
-            profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-            checkSubscriptionStatus();
+            checkStatusUI();
         });
 
-        function checkSubscriptionStatus() {
+        function checkStatusUI() {
             if (window.AndroidBridge) {
                 const regId = window.AndroidBridge.getRegId();
                 document.getElementById('modalRegId').value = regId;
@@ -196,15 +203,19 @@
                     lockIcon.className = "bi bi-chevron-right text-muted text-primary";
                 } else {
                     badge.className = "badge bg-danger p-2";
-                    badge.innerHTML = "Inactive (Expired)";
+                    badge.innerHTML = "Inactive (Locked)";
                     lockIcon.className = "bi bi-lock-fill text-danger";
                 }
             }
         }
 
         function openProfileModal() {
-            checkSubscriptionStatus();
-            profileModal.show();
+            checkStatusUI();
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('customModal').style.display = 'none';
         }
 
         function copyRegId() {
@@ -220,13 +231,12 @@
                 if (isActive) {
                     window.AndroidBridge.openFbLite();
                 } else {
-                    // অ্যাকাউন্ট ইনঅ্যাক্টিভ হলে মাই প্রোফাইল ওপেন করে পেমেন্ট করতে বলবে
-                    alert("Your account is inactive! Please check 'My Profile' to renew subscription.");
+                    alert("Your account is locked! Please check 'My Profile' for ID and payment.");
                     openProfileModal();
                 }
             }
         }
     </script>
 </body>
-                            </html>
-                            
+    </html>
+    
