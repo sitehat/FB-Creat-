@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         btnClearData.setOnClickListener { clearAppData() }
         btnEmailCode.setOnClickListener { extractEmailCode() }
 
+        // ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে সাবস্ক্রিপশন সিঙ্ক করা
         syncSubscriptionFromFirebase()
 
         webView.loadUrl("file:///android_asset/index.html")
@@ -92,17 +93,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun syncSubscriptionFromFirebase() {
         val regId = getOrCreateRegId()
-        
         Thread {
             try {
-                // ১. মূল পাথে চেক
-                var expiryTime = checkUrl("$FIREBASE_DATABASE_URL/$regId.json")
-                
-                // ২. না পেলে /users/ পাথে চেক
+                var expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/$regId.json")
                 if (expiryTime == 0L) {
-                    expiryTime = checkUrl("$FIREBASE_DATABASE_URL/users/$regId.json")
+                    expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/users/$regId.json")
                 }
-
                 if (expiryTime > 0L) {
                     val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
                     prefs.edit().putLong("expiry_time", expiryTime).apply()
@@ -113,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun checkUrl(urlString: String): Long {
+    private fun checkFirebaseUrl(urlString: String): Long {
         return try {
             val url = URL(urlString)
             val conn = url.openConnection() as HttpURLConnection
@@ -151,6 +147,7 @@ class MainActivity : AppCompatActivity() {
     private fun isAccountActive(): Boolean {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val expiryTime = prefs.getLong("expiry_time", 0L)
+        // যদি ডাটাবেজে মেয়াদ থাকে এবং বর্তমান সময় তার চেয়ে কম হয় তবে Active
         return System.currentTimeMillis() < expiryTime
     }
 
