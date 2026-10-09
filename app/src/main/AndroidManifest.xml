@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.fbcreat.app">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- আধুনিক অ্যান্ড্রয়েড ডিভাইসে টেলিগ্রাম এবং হোয়াটসঅ্যাপ লিঙ্ক সরাসরি ওপেন করার জন্য পারমিশন -->
     <queries>
         <package android:name="org.telegram.messenger" />
         <package android:name="com.whatsapp" />
