@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB-Creat</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: linear-gradient(180deg, #eef5ff 0%, #f8fafc 100%); color: #1e293b; padding-bottom: 20px; }
+        
+        /* Header */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 4px; }
+        .logo span { background: #1877f2; color: white; padding: 2px 8px; border-radius: 6px; font-size: 18px; }
+        nav { display: flex; gap: 12px; }
+        nav a { text-decoration: none; color: #475569; font-weight: 600; font-size: 13px; cursor: pointer; }
+        nav a.active { color: #1877f2; border-bottom: 2px solid #1877f2; }
+        .btn-profile { background: #1877f2; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+        /* Hero */
+        .hero { padding: 20px 16px; }
+        .hero-title { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+        .hero-title span { background: #1877f2; color: white; padding: 2px 8px; border-radius: 6px; }
+        .hero-sub { font-size: 15px; font-weight: 700; color: #334155; margin-top: 6px; margin-bottom: 16px; }
+
+        /* Menu List */
+        .menu-list { display: flex; flex-direction: column; gap: 10px; }
+        .menu-btn { display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-weight: 600; color: #1e293b; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .menu-btn:active { background: #f1f5f9; transform: scale(0.98); }
+        .num-badge { background: #1877f2; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+        /* Buttons */
+        .cta-group { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-blue { flex: 1; background: #1877f2; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-outline { flex: 1; background: transparent; color: #1877f2; border: 2px solid #1877f2; padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+        /* Info Cards */
+        .cards-container { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+        .info-card { background: #ffffff; padding: 16px; border-radius: 14px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .icon-box { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+        .bg-blue { background: #1877f2; }
+        .bg-green { background: #10b981; }
+        .card-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .card-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+
+        /* Footer */
+        footer { background: #0f172a; color: white; text-align: center; padding: 12px; font-size: 12px; font-weight: 600; margin-top: 24px; }
+        footer span { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo"><span>FB</span>-Creat</div>
+        <nav>
+            <a class="active">Home</a>
+            <a onclick="document.getElementById('about-card').scrollIntoView({behavior:'smooth'})">About us</a>
+            <a onclick="document.getElementById('support-card').scrollIntoView({behavior:'smooth'})">Support</a>
+        </nav>
+        <button class="btn-profile">
+            <i class="fa-solid fa-user"></i> My profile
+        </button>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-title"><span>FB</span>-Creat</div>
+        <div class="hero-sub">Your Smart Solution for Social Media and Email</div>
+
+        <div class="menu-list">
+            <!-- Option 1: New FB Account -->
+            <div class="menu-btn" onclick="startFbAccount()">
+                <div class="num-badge">1</div>
+                <div>New Fb Account</div>
+            </div>
+
+            <!-- Option 2 -->
+            <div class="menu-btn">
+                <div class="num-badge">2</div>
+                <div>Buy gmail outlook</div>
+            </div>
+
+            <!-- Option 3 -->
+            <div class="menu-btn">
+                <div class="num-badge">3</div>
+                <div>Buy proxy</div>
+            </div>
+
+            <!-- Option 4 -->
+            <div class="menu-btn">
+                <div class="num-badge">4</div>
+                <div>Buy vpn</div>
+            </div>
+        </div>
+
+        <div class="cta-group">
+            <button class="btn-blue" onclick="document.getElementById('about-card').scrollIntoView({behavior:'smooth'})">
+                <i class="fa-solid fa-user"></i> About us
+            </button>
+            <button class="btn-outline" onclick="document.getElementById('support-card').scrollIntoView({behavior:'smooth'})">
+                <i class="fa-solid fa-headset"></i> Support
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="cards-container">
+        <div class="info-card" id="about-card">
+            <div class="card-header">
+                <div class="icon-box bg-blue"><i class="fa-solid fa-users"></i></div>
+                <div class="card-title">About us</div>
+            </div>
+            <div class="card-desc">
+                FB-Creat is your trusted platform for creating Facebook accounts, buying Gmail/Outlook accounts, proxies and VPN services. We provide fast, secure and reliable solutions to meet your online needs.
+            </div>
+        </div>
+
+        <div class="info-card" id="support-card">
+            <div class="card-header">
+                <div class="icon-box bg-green"><i class="fa-solid fa-headset"></i></div>
+                <div>
+                    <div class="card-title">Support</div>
+                    <div style="font-size: 11px; color: #10b981; font-weight:600;">Powered by Hasan</div>
+                </div>
+            </div>
+            <div class="card-desc">
+                Need help? Our support team is always ready to assist you.
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        Powered by <span>Hasan</span>
+    </footer>
+
+    <script>
+        function startFbAccount() {
+            if (window.AndroidBridge && window.AndroidBridge.openFbLite) {
+                window.AndroidBridge.openFbLite();
+            } else {
+                window.location.href = 'https://m.facebook.com/';
+            }
+        }
+    </script>
+</body>
+  </html>
+  
