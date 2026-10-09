@@ -4,247 +4,243 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FB-Creat</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: linear-gradient(180deg, #eef5ff 0%, #f8fafc 100%); color: #1e293b; padding-bottom: 20px; }
-        
-        /* Header */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 4px; }
-        .logo span { background: #1877f2; color: white; padding: 2px 8px; border-radius: 6px; font-size: 18px; }
-        nav { display: flex; gap: 12px; }
-        nav a { text-decoration: none; color: #475569; font-weight: 600; font-size: 13px; cursor: pointer; }
-        nav a.active { color: #1877f2; border-bottom: 2px solid #1877f2; }
-        .btn-profile { background: #1877f2; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-
-        /* Hero */
-        .hero { padding: 20px 16px; }
-        .hero-title { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.2; }
-        .hero-title span { background: #1877f2; color: white; padding: 2px 8px; border-radius: 6px; }
-        .hero-sub { font-size: 15px; font-weight: 700; color: #334155; margin-top: 6px; margin-bottom: 16px; }
-
-        /* Menu List */
-        .menu-list { display: flex; flex-direction: column; gap: 10px; }
-        .menu-btn { display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-weight: 600; color: #1e293b; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .menu-btn:active { background: #f1f5f9; transform: scale(0.98); }
-        .num-badge { background: #1877f2; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
-
-        /* Buttons */
-        .cta-group { display: flex; gap: 10px; margin-top: 16px; }
-        .btn-blue { flex: 1; background: #1877f2; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn-outline { flex: 1; background: transparent; color: #1877f2; border: 2px solid #1877f2; padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-
-        /* Info Cards */
-        .cards-container { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        .info-card { background: #ffffff; padding: 16px; border-radius: 14px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .icon-box { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
-        .bg-blue { background: #1877f2; }
-        .bg-green { background: #10b981; }
-        .card-title { font-size: 16px; font-weight: 700; color: #0f172a; }
-        .card-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
-
-        /* Modal / Profile Popup */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-in-out; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-        .modal-header h3 { font-size: 18px; color: #0f172a; }
-        .close-btn { font-size: 22px; cursor: pointer; color: #64748b; }
-        
-        .info-box { margin-bottom: 14px; }
-        .info-box label { font-size: 12px; color: #64748b; font-weight: 600; display: block; margin-bottom: 4px; }
-        .reg-id-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; font-weight: 700; color: #1e293b; font-size: 15px; }
-        .btn-copy { background: #1877f2; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-        
-        .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-        .status-badge.inactive { background: #fee2e2; color: #ef4444; }
-        .status-badge.active { background: #d1fae5; color: #10b981; }
-
-        .recharge-box { background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 10px; padding: 12px; margin-top: 14px; font-size: 12px; color: #1e3a8a; }
-        .recharge-box h4 { margin-bottom: 6px; color: #1d4ed8; font-size: 13px; }
-        .contact-btns { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-contact { flex: 1; text-decoration: none; padding: 8px; border-radius: 6px; text-align: center; color: white; font-weight: 600; font-size: 12px; }
-        .btn-wa { background: #25d366; }
-        .btn-tg { background: #229ed9; }
-
-        footer { background: #0f172a; color: white; text-align: center; padding: 12px; font-size: 12px; font-weight: 600; margin-top: 24px; }
-        footer span { color: #38bdf8; }
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .main-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .action-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: #212529;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+        .btn-number {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            margin-right: 12px;
+        }
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        .recharge-box {
+            background-color: #eef5ff;
+            border: 1px dashed #0d6efd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <header>
-        <div class="logo"><span>FB</span>-Creat</div>
-        <nav>
-            <a class="active">Home</a>
-            <a onclick="document.getElementById('about-card').scrollIntoView({behavior:'smooth'})">About us</a>
-            <a onclick="document.getElementById('support-card').scrollIntoView({behavior:'smooth'})">Support</a>
-        </nav>
-        <button class="btn-profile" onclick="openProfileModal()">
-            <i class="fa-solid fa-user"></i> My profile
-        </button>
-    </header>
-
-    <!-- Hero Section -->
-    <div class="hero">
-        <div class="hero-title"><span>FB</span>-Creat</div>
-        <div class="hero-sub">Your Smart Solution for Social Media and Email</div>
-
-        <div class="menu-list">
-            <!-- Option 1: New FB Account -->
-            <div class="menu-btn" onclick="startFbAccount()">
-                <div class="num-badge">1</div>
-                <div>New Fb Account</div>
-            </div>
-
-            <!-- Option 2 -->
-            <div class="menu-btn">
-                <div class="num-badge">2</div>
-                <div>Buy gmail outlook</div>
-            </div>
-
-            <!-- Option 3 -->
-            <div class="menu-btn">
-                <div class="num-badge">3</div>
-                <div>Buy proxy</div>
-            </div>
-
-            <!-- Option 4 -->
-            <div class="menu-btn">
-                <div class="num-badge">4</div>
-                <div>Buy vpn</div>
-            </div>
-        </div>
-
-        <div class="cta-group">
-            <button class="btn-blue" onclick="document.getElementById('about-card').scrollIntoView({behavior:'smooth'})">
-                <i class="fa-solid fa-user"></i> About us
-            </button>
-            <button class="btn-outline" onclick="document.getElementById('support-card').scrollIntoView({behavior:'smooth'})">
-                <i class="fa-solid fa-headset"></i> Support
+    <!-- Header Navbar -->
+    <nav class="navbar navbar-expand navbar-light bg-white shadow-sm px-3 sticky-top">
+        <a class="navbar-brand text-primary" href="#">
+            <span class="bg-primary text-white px-2 py-1 rounded me-1">FB</span>-Creat
+        </a>
+        <div class="ms-auto d-flex gap-2">
+            <a href="#" class="nav-link fw-semibold text-primary">Home</a>
+            <a href="#" class="nav-link text-secondary">About us</a>
+            <a href="https://t.me/hasanroni993" class="nav-link text-secondary">Support</a>
+            <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openProfileModal()">
+                <i class="bi bi-person-circle me-1"></i> My profile
             </button>
         </div>
-    </div>
+    </nav>
 
-    <!-- Info Section -->
-    <div class="cards-container">
-        <div class="info-card" id="about-card">
-            <div class="card-header">
-                <div class="icon-box bg-blue"><i class="fa-solid fa-users"></i></div>
-                <div class="card-title">About us</div>
-            </div>
-            <div class="card-desc">
-                FB-Creat is your trusted platform for creating Facebook accounts, buying Gmail/Outlook accounts, proxies and VPN services. We provide fast, secure and reliable solutions to meet your online needs.
-            </div>
-        </div>
+    <!-- Main Container -->
+    <div class="container my-4">
+        <div class="main-card">
+            <h4 class="fw-bold mb-1"><span class="text-primary">FB</span>-Creat</h4>
+            <p class="text-muted small">Your Smart Solution for Social Media and Email</p>
 
-        <div class="info-card" id="support-card">
-            <div class="card-header">
-                <div class="icon-box bg-green"><i class="fa-solid fa-headset"></i></div>
-                <div>
-                    <div class="card-title">Support</div>
-                    <div style="font-size: 11px; color: #10b981; font-weight:600;">Powered by Hasan</div>
-                </div>
-            </div>
-            <div class="card-desc">
-                Need help? Our support team is always ready to assist you.
-            </div>
-        </div>
-    </div>
-
-    <!-- My Profile Modal -->
-    <div id="profileModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-user-gear"></i> My Profile</h3>
-                <span class="close-btn" onclick="closeProfileModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="info-box">
-                    <label>Registration ID</label>
-                    <div class="reg-id-box">
-                        <span id="txtRegId">FBC-LOADING</span>
-                        <button class="btn-copy" onclick="copyRegId()"><i class="fa-solid fa-copy"></i> Copy</button>
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <label>Subscription Status</label>
+            <div class="mt-4">
+                <!-- 1. New FB Account Option -->
+                <div class="action-btn" onclick="handleNewFbAccount()">
                     <div>
-                        <span id="badgeStatus" class="status-badge inactive">🔴 Inactive (Expired)</span>
+                        <span class="btn-number">1</span>
+                        New Fb Account
                     </div>
+                    <i class="bi bi-lock-fill text-danger" id="lockIcon"></i>
                 </div>
 
-                <div class="recharge-box">
-                    <h4><i class="fa-solid fa-bolt"></i> 30 Days Package (30 TK)</h4>
-                    <p><b>bKash / Nagad (Personal):</b> 01326027993</p>
-                    <p style="margin-top: 4px; font-size: 11px;">উপরের আইডিটি কপি করে বিকাশ/নগদে ৩০ টাকা সেন্ড মানি করুন এবং আপনার আইডিটি হোয়াটসঅ্যাপ/টেলিগ্রামে জানান।</p>
-                    <div class="contact-btns">
-                        <a href="https://wa.me/8801326027993" target="_blank" class="btn-contact btn-wa"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
-                        <a href="https://t.me/hasanroni993" target="_blank" class="btn-contact btn-tg"><i class="fa-brands fa-telegram"></i> Telegram</a>
+                <!-- 2. Buy Gmail Outlook -->
+                <a href="https://t.me/hasanroni993" class="action-btn">
+                    <div>
+                        <span class="btn-number bg-primary">2</span>
+                        Buy gmail outlook
                     </div>
-                </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <!-- 3. Buy Proxy -->
+                <a href="https://t.me/hasanroni993" class="action-btn">
+                    <div>
+                        <span class="btn-number bg-primary">3</span>
+                        Buy proxy
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <!-- 4. Buy VPN -->
+                <a href="https://t.me/hasanroni993" class="action-btn">
+                    <div>
+                        <span class="btn-number bg-primary">4</span>
+                        Buy vpn
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Support Card -->
+        <div class="main-card d-flex align-items-center gap-3">
+            <div class="bg-success text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                <i class="bi bi-headset fs-4"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">Support</h6>
+                <small class="text-success fw-semibold">Powered by Hasan</small>
+                <p class="text-muted extra-small mb-0 mt-1" style="font-size:0.8rem;">Need help? Our support team is always ready to assist you.</p>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer>
-        Powered by <span>Hasan</span>
+    <footer class="text-center py-3 bg-dark text-white-50 small mt-auto">
+        Powered by <span class="text-white fw-semibold">Hasan</span>
     </footer>
 
-    <script>
-        function openProfileModal() {
-            if (window.AndroidBridge && window.AndroidBridge.getRegId) {
-                var id = window.AndroidBridge.getRegId();
-                document.getElementById('txtRegId').innerText = id;
+    <!-- My Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-gear me-2"></i>My Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label text-muted small fw-semibold">Registration ID</label>
+                    <div class="input-group mb-3">
+                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
+                        <button class="btn btn-primary" onclick="copyRegId()"><i class="bi bi-files me-1"></i>Copy</button>
+                    </div>
 
-                var isActive = window.AndroidBridge.isAccountActive();
-                var badge = document.getElementById('badgeStatus');
-                if (isActive) {
-                    badge.className = 'status-badge active';
-                    badge.innerHTML = '🟢 Active (30 Days)';
+                    <label class="form-label text-muted small fw-semibold">Subscription Status</label>
+                    <div id="statusBadgeContainer" class="mb-3">
+                        <span class="badge bg-danger status-badge" id="modalStatusBadge"><i class="bi bi-x-circle me-1"></i>Inactive (Expired)</span>
+                    </div>
+
+                    <div class="recharge-box small">
+                        <div class="fw-bold text-primary mb-1"><i class="bi bi-lightning-charge-fill me-1"></i>30 Days Package (30 TK)</div>
+                        <div class="text-dark fw-semibold mb-1">bKash / Nagad (Personal): <span class="text-primary">01326027993</span></div>
+                        <p class="text-muted mb-2" style="font-size: 0.82rem;">
+                            উপরের আইডিটি কপি করে বিকাশ/নগদে ৩০ টাকা সেন্ড মানি করুন এবং আপনার আইডিটি হোয়াটসঅ্যাপ/টেলিগ্রামে জানান।
+                        </p>
+                        <div class="d-flex gap-2">
+                            <a href="https://wa.me/8801326027993" class="btn btn-success btn-sm w-50"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>
+                            <a href="https://t.me/hasanroni993" class="btn btn-info text-white btn-sm w-50"><i class="bi bi-telegram me-1"></i>Telegram</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+    <script>
+        let profileModal;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
+            refreshStatus();
+        });
+
+        function refreshStatus() {
+            if (window.AndroidBridge) {
+                const regId = window.AndroidBridge.getRegId();
+                document.getElementById('modalRegId').value = regId;
+
+                const status = window.AndroidBridge.checkSubscriptionStatus();
+                const badge = document.getElementById('modalStatusBadge');
+                const lockIcon = document.getElementById('lockIcon');
+
+                if (status === "ACTIVE") {
+                    badge.className = "badge bg-success status-badge";
+                    badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>Active (30 Days)';
+                    lockIcon.className = "bi bi-chevron-right text-muted";
                 } else {
-                    badge.className = 'status-badge inactive';
-                    badge.innerHTML = '🔴 Inactive (Expired)';
+                    badge.className = "badge bg-danger status-badge";
+                    badge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Inactive (Expired)';
+                    lockIcon.className = "bi bi-lock-fill text-danger";
                 }
             }
-            document.getElementById('profileModal').style.display = 'flex';
         }
 
-        function closeProfileModal() {
-            document.getElementById('profileModal').style.display = 'none';
+        function openProfileModal() {
+            refreshStatus();
+            profileModal.show();
         }
 
         function copyRegId() {
-            var regId = document.getElementById('txtRegId').innerText;
-            if (window.AndroidBridge && window.AndroidBridge.copyToClipboardJs) {
+            const regId = document.getElementById('modalRegId').value;
+            if (window.AndroidBridge) {
                 window.AndroidBridge.copyToClipboardJs(regId);
-            } else {
-                navigator.clipboard.writeText(regId);
-                alert("Copied: " + regId);
             }
         }
 
-        function startFbAccount() {
-            if (window.AndroidBridge && window.AndroidBridge.isAccountActive) {
-                if (window.AndroidBridge.isAccountActive()) {
+        function handleNewFbAccount() {
+            if (window.AndroidBridge) {
+                const status = window.AndroidBridge.checkSubscriptionStatus();
+                if (status === "ACTIVE") {
                     window.AndroidBridge.openFbLite();
                 } else {
-                    alert('আপনার ৩০ দিনের প্যাকেজটি অ্যাক্টিভ নয়! অনুগ্রহ করে My Profile থেকে রিচার্জ করুন।');
                     openProfileModal();
-                }
-            } else {
-                if (window.AndroidBridge && window.AndroidBridge.openFbLite) {
-                    window.AndroidBridge.openFbLite();
-                } else {
-                    window.location.href = 'https://m.facebook.com/';
                 }
             }
         }
     </script>
 </body>
-                        </html>
-                        
+                            </html>
+                            
