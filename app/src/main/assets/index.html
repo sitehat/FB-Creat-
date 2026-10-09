@@ -28,8 +28,14 @@
             <h2 class="text-2xl font-bold text-gray-900">FC<span class="text-blue-600">B</span> Store</h2>
             <p class="text-sm text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
 
-            <!-- 1st Item: New Fb Account -->
-            <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+            <!-- 1st Item: New Fb Account (Firebase Checked) -->
+            <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition relative overflow-hidden">
+                 
+                 <!-- Loading Overlay -->
+                 <div id="loadingOverlay" class="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
+                     <span class="text-xs font-semibold text-blue-600 animate-pulse">Checking Access...</span>
+                 </div>
+                 
                 <div class="flex items-center space-x-3">
                     <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">1</span>
                     <span class="font-semibold text-gray-700">New Fb Account</span>
@@ -95,32 +101,27 @@
             </div>
             
             <div class="space-y-2.5">
-                <!-- Tool 1 -->
                 <button onclick="openFbLiteApp()" class="w-full bg-blue-50 text-blue-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-blue-100">
                     <span>📱 ওপেন ফেসবুক লাইট</span>
                     <span>›</span>
                 </button>
-                <!-- Tool 2 -->
                 <button onclick="extractProfileLink()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
                     <span>🔗 প্রোফাইল লিংক এক্সট্রাক্ট</span>
                     <span>›</span>
                 </button>
-                <!-- Tool 3 -->
                 <button onclick="copy2FAKey()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
                     <span>🔑 2FA কী এবং কোড কপি</span>
                     <span>›</span>
                 </button>
-                <!-- Tool 4 -->
                 <button onclick="handleCookies()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
                     <span>🍪 কুকিজ হ্যান্ডলিং / কপি</span>
                     <span>›</span>
                 </button>
-                <!-- Tool 5 (New: 5-Digit Verification Code Tool for MailGen / Dong Van) -->
+                <!-- 5-Digit Verification Code Tool -->
                 <button onclick="getVerificationCode()" class="w-full bg-emerald-50 text-emerald-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-emerald-100">
                     <span>📥 ৫ সংখ্যার ভেরিফিকেশন কোড টুল</span>
                     <span>›</span>
                 </button>
-                <!-- Tool 6 -->
                 <button onclick="clearAppData()" class="w-full bg-red-50 text-red-600 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-red-100">
                     <span>🧹 অ্যাপ ডাটা ক্লিয়ার করুন</span>
                     <span>›</span>
@@ -131,98 +132,97 @@
 
     <!-- Script Section -->
     <script>
+        // আপনার দেওয়া আসল ফায়ারবেজ ডাটাবেজ ইউআরএল
         const firebaseConfig = {
-            databaseURL: "https://your-firebase-database-default-rtdb.firebaseio.com/"
+            databaseURL: "https://fb--creat-default-rtdb.firebaseio.com/"
         };
         
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch (e) {
-            console.log("Firebase init error: ", e);
-        }
-        
-        const db = typeof firebase !== 'undefined' ? firebase.database() : null;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
+        // ইউজার আইডি পাওয়ার ফাংশন
         function getRegId() {
             if (window.AndroidBridge && typeof window.AndroidBridge.getRegId === "function") {
                 return window.AndroidBridge.getRegId();
             }
-            return "FCB-REG-12345";
+            // ডিফল্ট টেস্ট আইডি (আপনার ডাটাবেজ অনুযায়ী)
+            return "FBC-6BCBE0"; 
         }
 
-        // অ্যাপ লোড হওয়ার সাথে সাথে ফায়ারবেজ চেক করে লক কন্ট্রোল
+        let isUserActive = false; // গ্লোবাল লক স্ট্যাটাস
+
+        // অ্যাপ লোড হওয়ার পর ফায়ারবেজ থেকে status চেক করা
         document.addEventListener("DOMContentLoaded", function() {
-            if (!db) return;
             let regId = getRegId();
-            
-            db.ref('users/' + regId + '/isActive').once('value').then((snapshot) => {
-                let isActive = snapshot.val();
-                if (isActive === true) {
-                    document.getElementById("lockIcon").style.display = "none";
+            let lockIcon = document.getElementById("lockIcon");
+            let overlay = document.getElementById("loadingOverlay");
+
+            // আপনার ডাটাবেজ স্ট্রাকচার অনুযায়ী পাথ: /FBC-6BCBE0/status
+            db.ref(regId + '/status').once('value').then((snapshot) => {
+                overlay.classList.add("hidden");
+                isUserActive = snapshot.val(); // true অথবা false আসবে
+                
+                if (isUserActive === true) {
+                    lockIcon.style.display = "none";
                 } else {
-                    document.getElementById("lockIcon").style.display = "block";
+                    lockIcon.style.display = "block";
                 }
             }).catch((error) => {
-                console.log("Firebase read error");
+                overlay.classList.add("hidden");
+                lockIcon.style.display = "block";
+                isUserActive = false;
+                console.error("Firebase fetch error: ", error);
             });
         });
 
-        // ১ নম্বর আইকনে ক্লিক
+        // ১ নম্বর আইকনে ক্লিক (ফায়ারবেজ চেক)
         function handleFirstIconClick() {
-            if (!db) {
-                document.getElementById("floatingToolsModal").classList.remove("hidden");
-                return;
+            if (isUserActive === true) {
+                 document.getElementById("floatingToolsModal").classList.remove("hidden");
+            } else {
+                 alert("⚠️ আপনার অ্যাকাউন্টটি বর্তমানে Active নয়। ফায়ারবেজ থেকে অ্যাক্সেস দেওয়া হয়নি।");
+                 
+                 // লাইভ রি-চেকিং
+                 let regId = getRegId();
+                 document.getElementById("loadingOverlay").classList.remove("hidden");
+                 db.ref(regId + '/status').once('value').then((snapshot) => {
+                     document.getElementById("loadingOverlay").classList.add("hidden");
+                     if(snapshot.val() === true) {
+                         isUserActive = true;
+                         document.getElementById("lockIcon").style.display = "none";
+                         document.getElementById("floatingToolsModal").classList.remove("hidden");
+                     }
+                 }).catch(() => { document.getElementById("loadingOverlay").classList.add("hidden"); });
             }
-
-            let regId = getRegId();
-            db.ref('users/' + regId + '/isActive').once('value').then((snapshot) => {
-                let isActive = snapshot.val();
-                if (isActive === true || isActive === null) {
-                    document.getElementById("floatingToolsModal").classList.remove("hidden");
-                } else {
-                    alert("⚠️ আপনার অ্যাকাউন্টটি বর্তমানে Active নয়। এক নম্বর ফিচারটি লক করা আছে।");
-                }
-            }).catch((error) => {
-                document.getElementById("floatingToolsModal").classList.remove("hidden");
-            });
         }
 
         function closeFloatingTools() {
             document.getElementById("floatingToolsModal").classList.add("hidden");
         }
 
-        // ২, ৩, ৪ নম্বর আইকনে ক্লিক
+        // ২, ৩, ৪ নম্বর আইটেমে ক্লিক
         function openOrderLink(itemType) {
             let regId = getRegId();
-            
-            if (db) {
-                db.ref('users/' + regId + '/telegramLink').once('value').then((snapshot) => {
-                    let tLink = snapshot.val() || "https://t.me/your_channel";
-                    let confirmOrder = confirm(`🛒 আপনি কি ${itemType} অর্ডার করতে চান?\nঅর্ডার করতে আমাদের টেলিগ্রাম চ্যানেলে যোগাযোগ করুন।`);
-                    if (confirmOrder) {
-                        window.location.href = tLink;
-                    }
-                }).catch(() => {
-                    alert(`🛒 ${itemType} অর্ডার করার জন্য সাপোর্টের সাথে যোগাযোগ করুন।`);
-                });
-            } else {
+            db.ref(regId + '/telegramLink').once('value').then((snapshot) => {
+                let tLink = snapshot.val() || "https://t.me/your_channel"; // আপনার ডিফল্ট টেলিগ্রাম লিংক দিন
+                let confirmOrder = confirm(`🛒 আপনি কি ${itemType} অর্ডার করতে চান?\nঅর্ডার করতে আমাদের টেলিগ্রাম চ্যানেলে যোগাযোগ করুন।`);
+                if (confirmOrder) {
+                    window.location.href = tLink;
+                }
+            }).catch(() => {
                 alert(`🛒 ${itemType} অর্ডার করার জন্য সাপোর্টের সাথে যোগাযোগ করুন।`);
-            }
+            });
         }
 
         // সাপোর্ট বা টেলিগ্রাম ওপেন
         function openSupportTelegram() {
             let regId = getRegId();
-            if (db) {
-                db.ref('users/' + regId + '/telegramLink').once('value').then((snapshot) => {
-                    let tLink = snapshot.val() || "https://t.me/your_channel";
-                    window.location.href = tLink;
-                }).catch(() => {
-                    alert("টেলিগ্রাম সাপোর্ট লিংকে যাওয়ার জন্য অ্যাপের আপডেট ভার্সন ব্যবহার করুন।");
-                });
-            } else {
+            db.ref(regId + '/telegramLink').once('value').then((snapshot) => {
+                let tLink = snapshot.val() || "https://t.me/your_channel";
+                window.location.href = tLink;
+            }).catch(() => {
                 alert("টেলিগ্রাম সাপোর্ট লিংক চেক করুন।");
-            }
+            });
         }
 
         // টুলস ফাংশনসমূহ
@@ -238,38 +238,29 @@
         function copy2FAKey() { alert("🔑 2FA সিক্রেট কী এবং কোড ক্লিপবোর্ডে কপি করা হয়েছে!"); }
         function handleCookies() { alert("🍪 কুকিজ সফলভাবে প্রসেস ও হ্যান্ডেল করা হয়েছে!"); }
         
-        // ৫ সংখ্যার ভেরিফিকেশন কোড সংগ্রহ টুল (MailGen / Dong Van FB জিমেইল কোড)
+        // ৫ সংখ্যার ভেরিফিকেশন কোড টুল
         function getVerificationCode() {
-            let inputMailText = prompt("📥 জিমেইল বা মেইলজিন (MailGen) থেকে পাওয়া ইনবক্সের মেসেজ বা কোডের টেক্সট এখানে পেস্ট করুন:");
+            let inputMailText = prompt("📥 জিমেইল বা মেইলজিন থেকে পাওয়া ইনবক্সের মেসেজ বা কোডের টেক্সট এখানে পেস্ট করুন:");
             if (inputMailText) {
-                // ৫ সংখ্যার কোড খোঁজার রেগুলার এক্সপ্রেশন
                 let match = inputMailText.match(/\b\d{5}\b/);
                 if (match) {
                     alert("✅ সফলভাবে ৫ সংখ্যার ভেরিফিকেশন কোড পাওয়া গেছে: " + match[0]);
-                    // ক্লিপবোর্ডে কপি করার চেষ্টা
-                    try {
-                        navigator.clipboard.writeText(match[0]);
-                    } catch (e) {}
+                    try { navigator.clipboard.writeText(match[0]); } catch (e) {}
                 } else {
-                    alert("⚠️ প্রদত্ত লেখায় কোনো ৫ সংখ্যার কোড পাওয়া যায়নি। দয়া করে সঠিক কোডের টেক্সট দিন।");
+                    alert("⚠️ প্রদত্ত লেখায় কোনো ৫ সংখ্যার কোড পাওয়া যায়নি।");
                 }
             }
         }
 
-        function clearAppData() { alert("🧹 অ্যাপ ডাটা সফলভাবে ক্লিয়ার করা হয়েছে!"); }
+        function clearAppData() { alert("🧹 অ্যাপ ডাটা ক্লিয়ার করা হয়েছে!"); }
 
-        // My Profile পপআপ
+        // মাই প্রোফাইল পপআপ
         function showMyProfile() {
             let regId = getRegId();
             
-            if (!db) {
-                alert(`=== MY PROFILE DETAILS ===\n\n🆔 Reg ID: ${regId}\n🟢 Status: Active\n📦 Package: Standard Package\n\n💳 bKash: 01700000000\n💳 Nagad: 01800000000`);
-                return;
-            }
-
-            db.ref('users/' + regId).once('value').then((snapshot) => {
+            db.ref(regId).once('value').then((snapshot) => {
                 let data = snapshot.val() || {};
-                let status = data.isActive === true ? "Active (সক্রিয়)" : "Inactive (নিষ্ক্রিয়)";
+                let status = data.status === true ? "Active (সক্রিয়)" : "Inactive (নিষ্ক্রিয়)";
                 let pkg = data.packageName || "Standard Package";
                 let bkash = data.bkashNumber || "01700000000";
                 let nagad = data.nagadNumber || "01800000000";
@@ -285,7 +276,7 @@
                 
                 alert(profileMessage);
             }).catch((error) => {
-                alert(`=== MY PROFILE DETAILS ===\n\n🆔 Reg ID: ${regId}\n🟢 Status: Active\n📦 Package: Standard Package\n\n💳 bKash: 01700000000\n💳 Nagad: 01800000000`);
+                alert("প্রোফাইল তথ্য লোড করতে সমস্যা হয়েছে! ইন্টারনেট কানেকশন চেক করুন।");
             });
         }
     </script>
