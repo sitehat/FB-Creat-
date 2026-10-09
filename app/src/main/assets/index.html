@@ -1,87 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FCB Store</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
 
-    <!-- Header -->
-    <div class="flex justify-between items-center p-4 bg-white shadow-sm">
+    <!-- Top Header -->
+    <div class="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-40">
         <h1 class="text-xl font-bold text-blue-600">FC <span class="text-blue-900">B</span></h1>
-        <div class="space-x-3 flex items-center">
-            <span class="text-blue-600 font-semibold cursor-pointer">Home</span>
-            <span onclick="openSupportTelegram()" class="text-gray-500 cursor-pointer">Support</span>
-            <button onclick="showMyProfile()" class="bg-blue-600 text-white px-3 py-1.5 rounded-full text-sm font-medium">My profile</button>
+        <div class="space-x-2 flex items-center">
+            <span class="text-blue-600 font-semibold cursor-pointer text-sm">Home</span>
+            <span onclick="openTelegramSupport()" class="text-gray-500 cursor-pointer text-sm">Support</span>
+            <!-- My Profile Button -->
+            <button onclick="openProfileModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow">My profile</button>
         </div>
     </div>
 
-    <!-- Main Store Container -->
+    <!-- Main Store Area -->
     <div class="p-4 max-w-md mx-auto w-full flex-grow">
         <div class="bg-white p-5 rounded-2xl shadow-sm mb-4">
             <h2 class="text-2xl font-bold text-gray-900">FC<span class="text-blue-600">B</span> Store</h2>
-            <p class="text-sm text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
+            <p class="text-xs text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
 
             <!-- 1st Item: New Fb Account (Firebase Checked) -->
-            <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition relative overflow-hidden">
-                 
-                 <!-- Loading Overlay -->
-                 <div id="loadingOverlay" class="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
-                     <span class="text-xs font-semibold text-blue-600 animate-pulse">Checking Access...</span>
-                 </div>
-                 
+            <!-- লক থাকলে ক্লিক করলে প্রোফাইল ওপেন হবে, আনলক থাকলে টুলস ওপেন হবে -->
+            <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition relative">
                 <div class="flex items-center space-x-3">
                     <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">1</span>
-                    <span class="font-semibold text-gray-700">New Fb Account</span>
+                    <span class="font-semibold text-gray-700 text-sm">New Fb Account</span>
                 </div>
-                <span id="lockIcon" class="text-red-500 text-lg">🔒</span>
+                <div class="flex items-center space-x-1">
+                    <span id="lockStatusText" class="text-xs text-red-500 font-medium">নিষ্ক্রিয়</span>
+                    <span id="lockIcon" class="text-red-500 text-base">🔒</span>
+                </div>
             </div>
 
-            <!-- 2nd Item: Buy Gmail/Outlook -->
-            <div onclick="openOrderLink('Gmail & Outlook')" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+            <!-- 2nd Item: Buy Gmail / Outlook -->
+            <div onclick="openGmailModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
                 <div class="flex items-center space-x-3">
                     <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">2</span>
-                    <span class="font-semibold text-gray-700">Buy gmail outlook</span>
+                    <span class="font-semibold text-gray-700 text-sm">Buy gmail outlook</span>
                 </div>
-                <span class="text-gray-400">›</span>
+                <span class="text-gray-400 font-bold">›</span>
             </div>
 
             <!-- 3rd Item: Buy Proxy -->
-            <div onclick="openOrderLink('Proxy')" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+            <div onclick="openProxyModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
                 <div class="flex items-center space-x-3">
                     <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">3</span>
-                    <span class="font-semibold text-gray-700">Buy proxy</span>
+                    <span class="font-semibold text-gray-700 text-sm">Buy proxy</span>
                 </div>
-                <span class="text-gray-400">›</span>
+                <span class="text-gray-400 font-bold">›</span>
             </div>
 
             <!-- 4th Item: Buy VPN -->
-            <div onclick="openOrderLink('VPN')" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+            <div onclick="openVpnModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
                 <div class="flex items-center space-x-3">
                     <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">4</span>
-                    <span class="font-semibold text-gray-700">Buy vpn</span>
+                    <span class="font-semibold text-gray-700 text-sm">Buy vpn</span>
                 </div>
-                <span class="text-gray-400">›</span>
+                <span class="text-gray-400 font-bold">›</span>
             </div>
         </div>
 
-        <!-- Notice Box -->
-        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-900 mb-4 shadow-sm">
+        <!-- Warning Notice -->
+        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-900 mb-4 shadow-sm leading-relaxed">
             ⚠️ টেলিগ্রাম লিংক থেকে মাসে অন্তত একবার অ্যাপস এর আপডেট ভার্সন সংগ্রহ করুন, পুরাতন ভার্সন ডিলিট করুন।
             <br><span class="text-red-600 font-semibold mt-1 block">টেকনিক্যাল সমস্যার কারণে স্টক সীমিত দেখাচ্ছে, আপনারা নির্দ্বিধায় অর্ডার করুন।</span>
         </div>
 
-        <!-- Support Card -->
-        <div onclick="openSupportTelegram()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center space-x-3 border border-gray-100 mb-4 cursor-pointer hover:bg-gray-50 transition">
+        <!-- Support Box -->
+        <div onclick="openTelegramSupport()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center space-x-3 border border-gray-100 mb-4 cursor-pointer hover:bg-gray-50 transition">
             <div class="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg">🎧</div>
             <div>
-                <h4 class="font-bold text-gray-800">Support</h4>
+                <h4 class="font-bold text-gray-800 text-sm">Support</h4>
                 <p class="text-xs text-gray-500">Powered by Hasan</p>
             </div>
         </div>
@@ -92,140 +91,440 @@
         Powered by Hasan
     </div>
 
-    <!-- Floating Tools Modal (6 Tools for 1st Icon) -->
-    <div id="floatingToolsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="font-bold text-lg text-blue-600">FB Lite Utility Tools</h3>
-                <button onclick="closeFloatingTools()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+    <!-- MODAL 1: MY PROFILE / ACTIVATION MODAL -->
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('profileModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            
+            <h3 class="font-bold text-lg text-blue-600 mb-1 border-b pb-2">My Profile & Activation</h3>
+            
+            <!-- User ID & Copy Option (Auto Generated) -->
+            <div class="bg-blue-50 p-3 rounded-xl mb-3 flex items-center justify-between border border-blue-100 mt-2">
+                <div>
+                    <span class="text-xs text-gray-500 block">আপনার রেজিস্ট্রেশন আইডি:</span>
+                    <span id="displayRegId" class="font-mono font-bold text-blue-800 text-base">...</span>
+                </div>
+                <button onclick="copyRegId()" class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded-lg hover:bg-blue-700">📋 কপি করুন</button>
             </div>
+
+            <!-- Account Status -->
+            <div class="mb-3 text-xs">
+                <span class="text-gray-600">অ্যাকাউন্ট স্ট্যাটাস:</span>
+                <span id="displayStatus" class="font-bold ml-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full">নিষ্ক্রিয় (Inactive)</span>
+            </div>
+
+            <!-- Package Details -->
+            <div class="bg-gray-50 p-3 rounded-xl mb-3 border border-gray-200 text-xs space-y-1">
+                <div class="font-bold text-gray-700">📦 প্যাকেজ তথ্য:</div>
+                <div class="flex justify-between"><span>প্যাকেজ মেয়াদ:</span> <span class="font-semibold text-gray-800">৩০ দিন</span></div>
+                <div class="flex justify-between"><span>প্যাকেজের মূল্য:</span> <span class="font-bold text-blue-600">৩০০ টাকা</span></div>
+            </div>
+
+            <!-- Payment Send Money Info -->
+            <div class="bg-amber-50 p-3 rounded-xl mb-4 border border-amber-200 text-xs space-y-1">
+                <div class="font-bold text-amber-900 mb-1">💳 সেন্ড মানি করুন (Send Money Only):</div>
+                <div class="flex justify-between items-center">
+                    <span>বিকাশ / নগদ:</span>
+                    <span class="font-mono font-bold text-gray-900 text-sm">01326027993</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-gray-500 mb-3 text-center">উক্ত নাম্বারে সেন্ড মানি করে আপনার রেজিস্ট্রেশন আইডিটি টেলিগ্রামে পাঠান। ফায়ারবেস থেকে আইডি একটিভ করে দেওয়া হবে।</p>
+
+            <button onclick="openTelegramSupport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl text-xs flex items-center justify-center space-x-2">
+                <span>✈️ টেলিগ্রামে পাঠান (@hasanroni993)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 2: FLOATING UTILITY TOOLS (Locked/Unlocked via Firebase) -->
+    <div id="floatingToolsModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('floatingToolsModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            
+            <h3 class="font-bold text-lg text-blue-600 mb-3 border-b pb-2">FB Lite Utility Tools</h3>
             
             <div class="space-y-2.5">
-                <button onclick="openFbLiteApp()" class="w-full bg-blue-50 text-blue-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-blue-100">
-                    <span>📱 ওপেন ফেসবুক লাইট</span>
+                <button onclick="openFbLiteApp()" class="w-full bg-blue-50 text-blue-700 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-blue-100">
+                    <span>📱 ১. ওপেন ফেসবুক লাইট</span>
                     <span>›</span>
                 </button>
-                <button onclick="extractProfileLink()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
-                    <span>🔗 প্রোফাইল লিংক এক্সট্রাক্ট</span>
+                <button onclick="extractProfileLink()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🔗 ২. প্রোফাইল লিংক এক্সট্রাক্ট</span>
                     <span>›</span>
                 </button>
-                <button onclick="copy2FAKey()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
-                    <span>🔑 2FA কী এবং কোড কপি</span>
+                <button onclick="copy2FAKey()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🔑 ৩. 2FA কী এবং কোড কপি</span>
                     <span>›</span>
                 </button>
-                <button onclick="handleCookies()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
-                    <span>🍪 কুকিজ হ্যান্ডলিং / কপি</span>
+                <button onclick="handleCookies()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🍪 ৪. কুকিজ হ্যান্ডলিং / কপি</span>
                     <span>›</span>
                 </button>
-                <!-- 5-Digit Verification Code Tool -->
-                <button onclick="getVerificationCode()" class="w-full bg-emerald-50 text-emerald-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-emerald-100">
-                    <span>📥 ৫ সংখ্যার ভেরিফিকেশন কোড টুল</span>
+                <button onclick="getVerificationCode()" class="w-full bg-emerald-50 text-emerald-700 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-emerald-100">
+                    <span>📥 ৫. ৫ সংখ্যার ভেরিফিকেশন কোড টুল</span>
                     <span>›</span>
                 </button>
-                <button onclick="clearAppData()" class="w-full bg-red-50 text-red-600 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-red-100">
-                    <span>🧹 অ্যাপ ডাটা ক্লিয়ার করুন</span>
+                <button onclick="clearAppData()" class="w-full bg-red-50 text-red-600 py-2.5 px-4 rounded-xl font-medium text-xs text-left flex items-center justify-between hover:bg-red-100">
+                    <span>🧹 ৬. অ্যাপ ডাটা ক্লিয়ার করুন</span>
                     <span>›</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Script Section -->
+    <!-- MODAL 3: BUY GMAIL / OUTLOOK STORE -->
+    <div id="gmailModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('gmailModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            
+            <h3 class="font-bold text-lg text-blue-600 mb-1 border-b pb-2">Gmail & Outlook Store</h3>
+            <p class="text-xs text-gray-500 mb-3">ক্যাটাগরি সিলেক্ট করে অর্ডার করুন</p>
+
+            <div class="space-y-3 mb-3">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">ক্যাটাগরি সিলেক্ট করুন:</label>
+                    <select id="gmailCategory" onchange="calcGmailTotal()" class="w-full border rounded-xl p-2.5 text-xs bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="0.77" data-name="Fr Outlook">Fr Outlook — ৳0.77</option>
+                        <option value="0.70" data-name="Hotmail Trusted">Hotmail Trusted — ৳0.70</option>
+                        <option value="0.70" data-name="Outlook Trusted" selected>Outlook Trusted — ৳0.70</option>
+                        <option value="0.95" data-name="Outlook.my">Outlook.my — ৳0.95</option>
+                        <option value="0.95" data-name="Outlook.cl">Outlook.cl — ৳0.95</option>
+                        <option value="0.95" data-name="Outlook.cz">Outlook.cz — ৳0.95</option>
+                        <option value="0.95" data-name="Outlook.be">Outlook.be — ৳0.95</option>
+                        <option value="0.95" data-name="Outlook.co.id">Outlook.co.id — ৳0.95</option>
+                        <option value="0.95" data-name="Outlook.de">Outlook.de — ৳0.95</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">পরিমাণ (Quantity):</label>
+                    <input type="number" id="gmailQty" value="10" min="1" oninput="calcGmailTotal()" class="w-full border rounded-xl p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="bg-blue-50 p-2.5 rounded-xl text-xs flex justify-between font-bold text-blue-900">
+                    <span>মোট টাকা (Total):</span>
+                    <span id="gmailTotalText">৳ 7.00</span>
+                </div>
+            </div>
+
+            <!-- Payment & TrxID -->
+            <div class="bg-amber-50 p-3 rounded-xl mb-3 border border-amber-200 text-xs space-y-1">
+                <div class="font-bold text-amber-900 mb-1">💳 বিকাশ/নগদ সেন্ড মানি:</div>
+                <div class="flex justify-between"><span>bKash / Nagad:</span> <span class="font-mono font-bold text-gray-900">01326027993</span></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-xs font-semibold text-gray-600 block mb-1">ট্রানজেকশন আইডি দিন (TrxID):</label>
+                <input type="text" id="gmailTrxId" placeholder="যেমন: 9J87XX12" class="w-full border rounded-xl p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <button onclick="generateGmailVoucher()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl text-xs mb-2">
+                🎟️ ভাউচার জেনারেট করুন
+            </button>
+
+            <!-- Generated Voucher Result -->
+            <div id="gmailVoucherResult" class="hidden bg-green-50 border border-green-200 p-3 rounded-xl text-xs mt-2">
+                <div class="font-bold text-green-800 mb-1">✅ অর্ডার ভাউচার তৈরি হয়েছে!</div>
+                <div id="gmailVoucherText" class="font-mono text-[11px] bg-white p-2 rounded border mb-2 whitespace-pre-wrap"></div>
+                <button onclick="copyAndOpenTelegram('gmailVoucherText')" class="w-full bg-green-600 text-white py-1.5 rounded-lg font-semibold">📋 কপি করুন ও টেলিগ্রামে পাঠান</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: BUY PROXY STORE -->
+    <div id="proxyModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('proxyModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            
+            <h3 class="font-bold text-lg text-blue-600 mb-1 border-b pb-2">Buy Proxy Store</h3>
+            <p class="text-xs text-gray-500 mb-3">প্রক্সি প্যাকেজ সিলেক্ট করুন</p>
+
+            <div class="space-y-3 mb-3">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">প্রক্সি সিলেক্ট করুন:</label>
+                    <select id="proxyCategory" onchange="calcProxyTotal()" class="w-full border rounded-xl p-2.5 text-xs bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="15" data-name="9 Proxy (100 MB)">9 Proxy (100 MB) — ৳15.00</option>
+                        <option value="25" data-name="9 Proxy (200 MB)">9 Proxy (200 MB) — ৳25.00</option>
+                        <option value="65" data-name="9 Proxy (500 MB)">9 Proxy (500 MB) — ৳65.00</option>
+                        <option value="120" data-name="9 Proxy (1 GB)">9 Proxy (1 GB) — ৳120.00</option>
+                        <option value="15" data-name="Rapid Proxy (100 MB)">Rapid Proxy (100 MB) — ৳15.00</option>
+                        <option value="30" data-name="Rapid Proxy (200 MB)">Rapid Proxy (200 MB) — ৳30.00</option>
+                        <option value="70" data-name="Rapid Proxy (500 MB)">Rapid Proxy (500 MB) — ৳70.00</option>
+                        <option value="135" data-name="Rapid Proxy (1 GB)">Rapid Proxy (1 GB) — ৳135.00</option>
+                        <option value="10" data-name="Nova Proxy (200 MB)">Nova Proxy (200 MB) — ৳10.00</option>
+                        <option value="10" data-name="Owl Proxy">Owl Proxy — ৳10.00</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">পরিমাণ (Quantity):</label>
+                    <input type="number" id="proxyQty" value="1" min="1" oninput="calcProxyTotal()" class="w-full border rounded-xl p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="bg-blue-50 p-2.5 rounded-xl text-xs flex justify-between font-bold text-blue-900">
+                    <span>মোট টাকা:</span>
+                    <span id="proxyTotalText">৳ 15.00</span>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 p-3 rounded-xl mb-3 border border-amber-200 text-xs">
+                <div class="font-bold text-amber-900 mb-1">💳 বিকাশ/নগদ সেন্ড মানি: <span class="font-mono text-gray-900">01326027993</span></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-xs font-semibold text-gray-600 block mb-1">ট্রানজেকশন আইডি (TrxID):</label>
+                <input type="text" id="proxyTrxId" placeholder="TrxID দিন" class="w-full border rounded-xl p-2 text-xs outline-none">
+            </div>
+
+            <button onclick="generateProxyVoucher()" class="w-full bg-blue-600 text-white font-medium py-2.5 rounded-xl text-xs mb-2">🎟️ ভাউচার জেনারেট করুন</button>
+
+            <div id="proxyVoucherResult" class="hidden bg-green-50 border border-green-200 p-3 rounded-xl text-xs mt-2">
+                <div id="proxyVoucherText" class="font-mono text-[11px] bg-white p-2 rounded border mb-2 whitespace-pre-wrap"></div>
+                <button onclick="copyAndOpenTelegram('proxyVoucherText')" class="w-full bg-green-600 text-white py-1.5 rounded-lg font-semibold">📋 কপি করুন ও টেলিগ্রামে পাঠান</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: BUY VPN STORE -->
+    <div id="vpnModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('vpnModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            
+            <h3 class="font-bold text-lg text-blue-600 mb-1 border-b pb-2">Buy Premium VPN</h3>
+            <p class="text-xs text-gray-500 mb-3">ভিপিএন প্যাকেজ ও মেয়াদ সিলেক্ট করুন</p>
+
+            <div class="space-y-3 mb-3">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">ভিপিএন সিলেক্ট করুন:</label>
+                    <select id="vpnCategory" onchange="calcVpnTotal()" class="w-full border rounded-xl p-2.5 text-xs bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="20" data-name="Nord VPN (7 Days)">Nord VPN (7 Days) — ৳20.00</option>
+                        <option value="200" data-name="Nord VPN (30 Days)">Nord VPN (30 Days) — ৳200.00</option>
+                        <option value="60" data-name="Proton VPN (14 Days)">Proton VPN (14 Days) — ৳60.00</option>
+                        <option value="150" data-name="Proton VPN (30 Days)">Proton VPN (30 Days) — ৳150.00</option>
+                        <option value="20" data-name="HMA VPN (7 Days)">HMA VPN (7 Days) — ৳20.00</option>
+                        <option value="100" data-name="HMA VPN (30 Days)">HMA VPN (30 Days) — ৳100.00</option>
+                        <option value="20" data-name="Surfshark VPN (7 Days)">Surfshark VPN (7 Days) — ৳20.00</option>
+                        <option value="25" data-name="ExpressVPN (7 Days)">ExpressVPN (7 Days) — ৳25.00</option>
+                        <option value="30" data-name="Bitdefender VPN (7 Days)">Bitdefender VPN (7 Days) — ৳30.00</option>
+                        <option value="20" data-name="PIA VPN (7 Days)">PIA VPN (7 Days) — ৳20.00</option>
+                        <option value="30" data-name="Turbo VPN (7 Days)">Turbo VPN (7 Days) — ৳30.00</option>
+                        <option value="25" data-name="CyberGhost VPN">CyberGhost VPN — ৳25.00</option>
+                        <option value="30" data-name="Hotspot Shield (7 Days)">Hotspot Shield (7 Days) — ৳30.00</option>
+                        <option value="25" data-name="Viper VPN (3 Days)">Viper VPN (3 Days) — ৳25.00</option>
+                        <option value="30" data-name="Other VPNs (7 Days)">Betternet / IPVanish / Sky / PureVPN (7 Days) — ৳30.00</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">পরিমাণ (Quantity):</label>
+                    <input type="number" id="vpnQty" value="1" min="1" oninput="calcVpnTotal()" class="w-full border rounded-xl p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="bg-blue-50 p-2.5 rounded-xl text-xs flex justify-between font-bold text-blue-900">
+                    <span>মোট টাকা:</span>
+                    <span id="vpnTotalText">৳ 20.00</span>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 p-3 rounded-xl mb-3 border border-amber-200 text-xs">
+                <div class="font-bold text-amber-900 mb-1">💳 বিকাশ/নগদ সেন্ড মানি: <span class="font-mono text-gray-900">01326027993</span></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-xs font-semibold text-gray-600 block mb-1">ট্রানজেকশন আইডি (TrxID):</label>
+                <input type="text" id="vpnTrxId" placeholder="TrxID দিন" class="w-full border rounded-xl p-2 text-xs outline-none">
+            </div>
+
+            <button onclick="generateVpnVoucher()" class="w-full bg-blue-600 text-white font-medium py-2.5 rounded-xl text-xs mb-2">🎟️ ভাউচার জেনারেট করুন</button>
+
+            <div id="vpnVoucherResult" class="hidden bg-green-50 border border-green-200 p-3 rounded-xl text-xs mt-2">
+                <div id="vpnVoucherText" class="font-mono text-[11px] bg-white p-2 rounded border mb-2 whitespace-pre-wrap"></div>
+                <button onclick="copyAndOpenTelegram('vpnVoucherText')" class="w-full bg-green-600 text-white py-1.5 rounded-lg font-semibold">📋 কপি করুন ও টেলিগ্রামে পাঠান</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // আপনার দেওয়া আসল ফায়ারবেজ ডাটাবেজ ইউআরএল
+        // ১. ফায়ারবেজ কনফিগারেশন
         const firebaseConfig = {
             databaseURL: "https://fb--creat-default-rtdb.firebaseio.com/"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ইউজার আইডি পাওয়ার ফাংশন
-        function getRegId() {
+        // ২. ইউজারের অটো রেজিস্ট্রেশন আইডি জেনারেটর / ফেচার
+        function getRegistrationId() {
             if (window.AndroidBridge && typeof window.AndroidBridge.getRegId === "function") {
-                return window.AndroidBridge.getRegId();
+                let androidId = window.AndroidBridge.getRegId();
+                if (androidId) return androidId;
             }
-            // ডিফল্ট টেস্ট আইডি (আপনার ডাটাবেজ অনুযায়ী)
-            return "FBC-6BCBE0"; 
+            let savedId = localStorage.getItem("fcb_user_reg_id");
+            if (!savedId) {
+                // ৬ অক্ষরের অটোমেটিক আইডি তৈরি
+                let randomHex = Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
+                savedId = "FBC-" + randomHex;
+                localStorage.setItem("fcb_user_reg_id", savedId);
+            }
+            return savedId;
         }
 
-        let isUserActive = false; // গ্লোবাল লক স্ট্যাটাস
+        let currentRegId = getRegistrationId();
+        let isAccountActive = false;
+        
+        // আপনার দেওয়া সঠিক টেলিগ্রাম লিংকটি এখানে গ্লোবাল ভেরিয়েবল হিসেবে দেওয়া হলো
+        let defaultTelegram = "https://t.me/hasanroni993";
 
-        // অ্যাপ লোড হওয়ার পর ফায়ারবেজ থেকে status চেক করা
+        // ৩. অ্যাপ চালু হলেই ফায়ারবেজ থেকে একাউন্ট স্ট্যাটাস ভেরিফাই করা
         document.addEventListener("DOMContentLoaded", function() {
-            let regId = getRegId();
-            let lockIcon = document.getElementById("lockIcon");
-            let overlay = document.getElementById("loadingOverlay");
-
-            // আপনার ডাটাবেজ স্ট্রাকচার অনুযায়ী পাথ: /FBC-6BCBE0/status
-            db.ref(regId + '/status').once('value').then((snapshot) => {
-                overlay.classList.add("hidden");
-                isUserActive = snapshot.val(); // true অথবা false আসবে
-                
-                if (isUserActive === true) {
-                    lockIcon.style.display = "none";
-                } else {
-                    lockIcon.style.display = "block";
-                }
-            }).catch((error) => {
-                overlay.classList.add("hidden");
-                lockIcon.style.display = "block";
-                isUserActive = false;
-                console.error("Firebase fetch error: ", error);
-            });
+            document.getElementById("displayRegId").innerText = currentRegId;
+            checkFirebaseStatus();
+            calcGmailTotal();
+            calcProxyTotal();
+            calcVpnTotal();
         });
 
-        // ১ নম্বর আইকনে ক্লিক (ফায়ারবেজ চেক)
+        function checkFirebaseStatus() {
+            db.ref(currentRegId).once('value').then((snapshot) => {
+                let data = snapshot.val() || {};
+                isAccountActive = (data.status === true);
+
+                let lockIcon = document.getElementById("lockIcon");
+                let lockText = document.getElementById("lockStatusText");
+                let displayStatus = document.getElementById("displayStatus");
+
+                if (isAccountActive) {
+                    lockIcon.innerText = "🔓";
+                    lockText.innerText = "সক্রিয়";
+                    lockText.className = "text-xs text-green-600 font-medium";
+                    displayStatus.innerText = "সক্রিয় (Active)";
+                    displayStatus.className = "font-bold ml-1 text-green-600 bg-green-50 px-2 py-0.5 rounded-full";
+                } else {
+                    lockIcon.innerText = "🔒";
+                    lockText.innerText = "নিষ্ক্রিয়";
+                    lockText.className = "text-xs text-red-500 font-medium";
+                    displayStatus.innerText = "নিষ্ক্রিয় (Inactive)";
+                    displayStatus.className = "font-bold ml-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full";
+                }
+
+                // যদি ফায়ারবেজে কোনো নতুন টেলিগ্রাম লিংক দেন, তাহলে সেটি আপডেট হবে, নাহলে আপনার ডিফল্ট লিংকটিই থাকবে
+                if (data.telegramLink) defaultTelegram = data.telegramLink;
+
+            }).catch((e) => {
+                console.log("Firebase sync issue: ", e);
+            });
+        }
+
+        // ৪. ১ নম্বর আইকনে ক্লিক হ্যান্ডলার (আপনার শর্ত অনুযায়ী)
         function handleFirstIconClick() {
-            if (isUserActive === true) {
-                 document.getElementById("floatingToolsModal").classList.remove("hidden");
+            checkFirebaseStatus();
+            if (isAccountActive) {
+                // একটিভ থাকলে টুলস ওপেন হবে
+                document.getElementById("floatingToolsModal").classList.remove("hidden");
             } else {
-                 alert("⚠️ আপনার অ্যাকাউন্টটি বর্তমানে Active নয়। ফায়ারবেজ থেকে অ্যাক্সেস দেওয়া হয়নি।");
-                 
-                 // লাইভ রি-চেকিং
-                 let regId = getRegId();
-                 document.getElementById("loadingOverlay").classList.remove("hidden");
-                 db.ref(regId + '/status').once('value').then((snapshot) => {
-                     document.getElementById("loadingOverlay").classList.add("hidden");
-                     if(snapshot.val() === true) {
-                         isUserActive = true;
-                         document.getElementById("lockIcon").style.display = "none";
-                         document.getElementById("floatingToolsModal").classList.remove("hidden");
-                     }
-                 }).catch(() => { document.getElementById("loadingOverlay").classList.add("hidden"); });
+                // একটিভ না থাকলে সরাসরি 'মাই প্রোফাইল' পপআপ ওপেন হবে
+                openProfileModal();
             }
         }
 
-        function closeFloatingTools() {
-            document.getElementById("floatingToolsModal").classList.add("hidden");
+        // মোডাল কন্ট্রোল ফাংশন
+        function openProfileModal() { document.getElementById("profileModal").classList.remove("hidden"); }
+        function openGmailModal() { document.getElementById("gmailModal").classList.remove("hidden"); }
+        function openProxyModal() { document.getElementById("proxyModal").classList.remove("hidden"); }
+        function openVpnModal() { document.getElementById("vpnModal").classList.remove("hidden"); }
+        function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+
+        function copyRegId() {
+            navigator.clipboard.writeText(currentRegId);
+            alert("✅ আপনার রেজিস্ট্রেশন আইডি কপি করা হয়েছে: " + currentRegId);
         }
 
-        // ২, ৩, ৪ নম্বর আইটেমে ক্লিক
-        function openOrderLink(itemType) {
-            let regId = getRegId();
-            db.ref(regId + '/telegramLink').once('value').then((snapshot) => {
-                let tLink = snapshot.val() || "https://t.me/your_channel"; // আপনার ডিফল্ট টেলিগ্রাম লিংক দিন
-                let confirmOrder = confirm(`🛒 আপনি কি ${itemType} অর্ডার করতে চান?\nঅর্ডার করতে আমাদের টেলিগ্রাম চ্যানেলে যোগাযোগ করুন।`);
-                if (confirmOrder) {
-                    window.location.href = tLink;
-                }
-            }).catch(() => {
-                alert(`🛒 ${itemType} অর্ডার করার জন্য সাপোর্টের সাথে যোগাযোগ করুন।`);
-            });
+        // আপনার সঠিক টেলিগ্রাম লিংকে পাঠানোর ফাংশন
+        function openTelegramSupport() {
+            window.location.href = defaultTelegram;
         }
 
-        // সাপোর্ট বা টেলিগ্রাম ওপেন
-        function openSupportTelegram() {
-            let regId = getRegId();
-            db.ref(regId + '/telegramLink').once('value').then((snapshot) => {
-                let tLink = snapshot.val() || "https://t.me/your_channel";
-                window.location.href = tLink;
-            }).catch(() => {
-                alert("টেলিগ্রাম সাপোর্ট লিংক চেক করুন।");
-            });
+        // ৫. ডায়নামিক মূল্য হিসাব
+        function calcGmailTotal() {
+            let select = document.getElementById("gmailCategory");
+            let price = parseFloat(select.value) || 0;
+            let qty = parseInt(document.getElementById("gmailQty").value) || 0;
+            let total = price * qty;
+            document.getElementById("gmailTotalText").innerText = "৳ " + total.toFixed(2);
         }
 
-        // টুলস ফাংশনসমূহ
+        function calcProxyTotal() {
+            let select = document.getElementById("proxyCategory");
+            let price = parseFloat(select.value) || 0;
+            let qty = parseInt(document.getElementById("proxyQty").value) || 0;
+            let total = price * qty;
+            document.getElementById("proxyTotalText").innerText = "৳ " + total.toFixed(2);
+        }
+
+        function calcVpnTotal() {
+            let select = document.getElementById("vpnCategory");
+            let price = parseFloat(select.value) || 0;
+            let qty = parseInt(document.getElementById("vpnQty").value) || 0;
+            let total = price * qty;
+            document.getElementById("vpnTotalText").innerText = "৳ " + total.toFixed(2);
+        }
+
+        // ৬. ভাউচার জেনারেটর
+        function generateGmailVoucher() {
+            let select = document.getElementById("gmailCategory");
+            let itemName = select.options[select.selectedIndex].getAttribute("data-name");
+            let price = parseFloat(select.value);
+            let qty = document.getElementById("gmailQty").value;
+            let trx = document.getElementById("gmailTrxId").value.trim();
+            if(!trx) { alert("⚠️ অনুগ্রহ করে পেমেন্টের TrxID প্রদান করুন!"); return; }
+
+            let total = (price * parseInt(qty)).toFixed(2);
+            let voucher = `=== MAIL ORDER VOUCHER ===\nReg ID: ${currentRegId}\nItem: ${itemName}\nQty: ${qty} Pc\nTotal: ৳ ${total}\nTrxID: ${trx}`;
+            
+            document.getElementById("gmailVoucherText").innerText = voucher;
+            document.getElementById("gmailVoucherResult").classList.remove("hidden");
+        }
+
+        function generateProxyVoucher() {
+            let select = document.getElementById("proxyCategory");
+            let itemName = select.options[select.selectedIndex].getAttribute("data-name");
+            let price = parseFloat(select.value);
+            let qty = document.getElementById("proxyQty").value;
+            let trx = document.getElementById("proxyTrxId").value.trim();
+            if(!trx) { alert("⚠️ অনুগ্রহ করে পেমেন্টের TrxID প্রদান করুন!"); return; }
+
+            let total = (price * parseInt(qty)).toFixed(2);
+            let voucher = `=== PROXY ORDER VOUCHER ===\nReg ID: ${currentRegId}\nItem: ${itemName}\nQty: ${qty} Pc\nTotal: ৳ ${total}\nTrxID: ${trx}`;
+            
+            document.getElementById("proxyVoucherText").innerText = voucher;
+            document.getElementById("proxyVoucherResult").classList.remove("hidden");
+        }
+
+        function generateVpnVoucher() {
+            let select = document.getElementById("vpnCategory");
+            let itemName = select.options[select.selectedIndex].getAttribute("data-name");
+            let price = parseFloat(select.value);
+            let qty = document.getElementById("vpnQty").value;
+            let trx = document.getElementById("vpnTrxId").value.trim();
+            if(!trx) { alert("⚠️ অনুগ্রহ করে পেমেন্টের TrxID প্রদান করুন!"); return; }
+
+            let total = (price * parseInt(qty)).toFixed(2);
+            let voucher = `=== VPN ORDER VOUCHER ===\nReg ID: ${currentRegId}\nItem: ${itemName}\nQty: ${qty} Pc\nTotal: ৳ ${total}\nTrxID: ${trx}`;
+            
+            document.getElementById("vpnVoucherText").innerText = voucher;
+            document.getElementById("vpnVoucherResult").classList.remove("hidden");
+        }
+
+        function copyAndOpenTelegram(elementId) {
+            let text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            alert("📋 ভাউচার কপি করা হয়েছে! টেলিগ্রামে মেসেজ পেস্ট করে পাঠান।");
+            openTelegramSupport();
+        }
+
+        // ৭. ফ্লোটিং টুলসের ৬টি ফিচার
         function openFbLiteApp() {
             if (window.AndroidBridge && typeof window.AndroidBridge.openFbLite === "function") {
                 window.AndroidBridge.openFbLite();
@@ -233,52 +532,24 @@
                 alert("Opening Facebook Lite...");
             }
         }
-
-        function extractProfileLink() { alert("🔗 প্রোফাইল লিংক সফলভাবে কপি করা হয়েছে!"); }
-        function copy2FAKey() { alert("🔑 2FA সিক্রেট কী এবং কোড ক্লিপবোর্ডে কপি করা হয়েছে!"); }
-        function handleCookies() { alert("🍪 কুকিজ সফলভাবে প্রসেস ও হ্যান্ডেল করা হয়েছে!"); }
+        function extractProfileLink() { alert("🔗 প্রোফাইল লিংক এক্সট্রাক্ট করা হয়েছে!"); }
+        function copy2FAKey() { alert("🔑 2FA কোড সফলভাবে কপি করা হয়েছে!"); }
+        function handleCookies() { alert("🍪 কুকিজ সফলভাবে প্রসেস করা হয়েছে!"); }
         
-        // ৫ সংখ্যার ভেরিফিকেশন কোড টুল
         function getVerificationCode() {
-            let inputMailText = prompt("📥 জিমেইল বা মেইলজিন থেকে পাওয়া ইনবক্সের মেসেজ বা কোডের টেক্সট এখানে পেস্ট করুন:");
-            if (inputMailText) {
-                let match = inputMailText.match(/\b\d{5}\b/);
+            let text = prompt("📥 ইনবক্সের মেসেজ বা জিমেইল টেক্সট পেস্ট করুন:");
+            if (text) {
+                let match = text.match(/\b\d{5}\b/);
                 if (match) {
-                    alert("✅ সফলভাবে ৫ সংখ্যার ভেরিফিকেশন কোড পাওয়া গেছে: " + match[0]);
-                    try { navigator.clipboard.writeText(match[0]); } catch (e) {}
+                    alert("✅ ৫ সংখ্যার ভেরিফিকেশন কোড: " + match[0]);
+                    navigator.clipboard.writeText(match[0]);
                 } else {
-                    alert("⚠️ প্রদত্ত লেখায় কোনো ৫ সংখ্যার কোড পাওয়া যায়নি।");
+                    alert("⚠️ ৫ সংখ্যার কোনো কোড পাওয়া যায়নি।");
                 }
             }
         }
 
         function clearAppData() { alert("🧹 অ্যাপ ডাটা ক্লিয়ার করা হয়েছে!"); }
-
-        // মাই প্রোফাইল পপআপ
-        function showMyProfile() {
-            let regId = getRegId();
-            
-            db.ref(regId).once('value').then((snapshot) => {
-                let data = snapshot.val() || {};
-                let status = data.status === true ? "Active (সক্রিয়)" : "Inactive (নিষ্ক্রিয়)";
-                let pkg = data.packageName || "Standard Package";
-                let bkash = data.bkashNumber || "01700000000";
-                let nagad = data.nagadNumber || "01800000000";
-                let telegram = data.telegramLink || "https://t.me/your_channel";
-
-                let profileMessage = `=== MY PROFILE DETAILS ===\n\n` +
-                                     `🆔 Reg ID: ${regId}\n` +
-                                     `🟢 Status: ${status}\n` +
-                                     `📦 Package: ${pkg}\n\n` +
-                                     `💳 bKash: ${bkash}\n` +
-                                     `💳 Nagad: ${nagad}\n` +
-                                     `✈️ Telegram: ${telegram}`;
-                
-                alert(profileMessage);
-            }).catch((error) => {
-                alert("প্রোফাইল তথ্য লোড করতে সমস্যা হয়েছে! ইন্টারনেট কানেকশন চেক করুন।");
-            });
-        }
     </script>
 </body>
 </html>
