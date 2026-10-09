@@ -90,25 +90,24 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/index.html")
     }
 
+    // ফায়ারবেস থেকে সরাসরি status চেক করার নিরাপদ ব্যাকগ্রাউন্ড মেথড
     private fun syncSubscriptionFromFirebase() {
         val regId = getOrCreateRegId()
         Thread {
             try {
-                var expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/$regId.json")
-                if (expiryTime == 0L) {
-                    expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/users/$regId.json")
+                var isActive = checkFirebaseStatus("$FIREBASE_DATABASE_URL/$regId.json")
+                if (!isActive) {
+                    isActive = checkFirebaseStatus("$FIREBASE_DATABASE_URL/users/$regId.json")
                 }
-                if (expiryTime > 0L) {
-                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    prefs.edit().putLong("expiry_time", expiryTime).apply()
-                }
+                val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                prefs.edit().putBoolean("is_active", isActive).apply()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }.start()
     }
 
-    private fun checkFirebaseUrl(urlString: String): Long {
+    private fun checkFirebaseStatus(urlString: String): Boolean {
         return try {
             val url = URL(urlString)
             val conn = url.openConnection() as HttpURLConnection
@@ -119,11 +118,18 @@ class MainActivity : AppCompatActivity() {
                 val response = conn.inputStream.bufferedReader().readText()
                 if (response.isNotEmpty() && response != "null") {
                     val json = JSONObject(response)
-                    json.optLong("expiry_time", 0L)
-                } else 0L
-            } else 0L
+                    // ফায়ারবেসে status সরাসরি true বা "true" আছে কি না চেক করবে
+                    if (json.has("status")) {
+                        try {
+                            json.getBoolean("status")
+                        } catch (e: Exception) {
+                            json.optString("status", "").equals("true", ignoreCase = true)
+                        }
+                    } else false
+                } else false
+            } else false
         } catch (e: Exception) {
-            0L
+            false
         }
     }
 
@@ -145,8 +151,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun isAccountActive(): Boolean {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        val expiryTime = prefs.getLong("expiry_time", 0L)
-        return System.currentTimeMillis() < expiryTime
+        return prefs.getBoolean("is_active", false)
     }
 
     private fun extractProfileLink() {
