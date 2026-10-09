@@ -5,11 +5,16 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -18,6 +23,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var btnFloatingPlus: CardView
     private lateinit var panelTools: CardView
+
+    private val FIREBASE_DATABASE_URL = "https://fb--creat-default-rtdb.firebaseio.com"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
-        // JavaScript এর সাথে যোগাযোগের জন্য ব্রিজ সেটআপ
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
         webView.webViewClient = object : WebViewClient() {
@@ -73,18 +79,78 @@ class MainActivity : AppCompatActivity() {
             btnFloatingPlus.visibility = View.VISIBLE
         }
 
-        // ইউটিলিটি টুলস বাটন ক্লিক লজিক
         btnProfileLink.setOnClickListener { extractProfileLink() }
         btnAuthentic.setOnClickListener { extract2FAKeyAndCode() }
         btnCookies.setOnClickListener { extractCookies() }
         btnClearData.setOnClickListener { clearAppData() }
         btnEmailCode.setOnClickListener { extractEmailCode() }
 
-        // মূল HTML পেজ লোড করা
+        // ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে ৩০ দিনের মেয়াদ যাচাই করা
+        syncSubscriptionFromFirebase()
+
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // ফেসবুক প্রোফাইল লিংক বা UID এক্সট্র্যাক্ট করা
+    private fun syncSubscriptionFromFirebase() {
+        val regId = getOrCreateRegId()
+        Thread {
+            try {
+                var expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/$regId.json")
+                if (expiryTime == 0L) {
+                    expiryTime = checkFirebaseUrl("$FIREBASE_DATABASE_URL/users/$regId.json")
+                }
+                if (expiryTime > 0L) {
+                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    prefs.edit().putLong("expiry_time", expiryTime).apply()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun checkFirebaseUrl(urlString: String): Long {
+        return try {
+            val url = URL(urlString)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 3000
+            conn.readTimeout = 3000
+            if (conn.responseCode == 200) {
+                val response = conn.inputStream.bufferedReader().readText()
+                if (response.isNotEmpty() && response != "null") {
+                    val json = JSONObject(response)
+                    json.optLong("expiry_time", 0L)
+                } else 0L
+            } else 0L
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
+    private fun getOrCreateRegId(): String {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        var id = prefs.getString("reg_id", null)
+        if (id == null) {
+            val androidId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            val shortHash = if (!androidId.isNullOrEmpty()) {
+                androidId.takeLast(6).uppercase()
+            } else {
+                UUID.randomUUID().toString().replace("-", "").take(6).uppercase()
+            }
+            id = "FBC-$shortHash"
+            prefs.edit().putString("reg_id", id).apply()
+        }
+        return id
+    }
+
+    private fun isAccountActive(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val expiryTime = prefs.getLong("expiry_time", 0L)
+        // বর্তমান সময় ফায়ারবেসের expiry_time এর চেয়ে কম হলে তবেই সচল থাকবে
+        return System.currentTimeMillis() < expiryTime
+    }
+
     private fun extractProfileLink() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com") ?: ""
         var uid = ""
@@ -106,7 +172,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 2FA সিক্রেট কি এবং কোড জেনারেট করা
     private fun extract2FAKeyAndCode() {
         webView.evaluateJavascript(
             "(function() { " +
@@ -173,7 +238,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // কুকিজ এক্সট্রैक्ट করা
     private fun extractCookies() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com")
         if (!cookies.isNullOrEmpty()) {
@@ -184,7 +248,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // অ্যাপ ডাটা ও ক্যাশ ক্লিয়ার করা
     private fun clearAppData() {
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
@@ -196,7 +259,6 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://m.facebook.com/")
     }
 
-    // ইমেইল বা পেজ থেকে ভেরিফিকেশন কোড এক্সট্র্যাক্ট করা
     private fun extractEmailCode() {
         webView.evaluateJavascript(
             "(function() { " +
@@ -215,7 +277,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ক্লিপবোর্ডে টেক্সট কপি করার ফাংশন
     private fun copyToClipboard(label: String, text: String) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
@@ -233,13 +294,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // HTML পেজ থেকে কল করার জন্য জাভাস্ক্রিপ্ট ইন্টারফেস
     inner class WebAppInterface {
         @JavascriptInterface
         fun openFbLite() {
             runOnUiThread {
                 webView.loadUrl("https://m.facebook.com/")
             }
+        }
+
+        @JavascriptInterface
+        fun getRegId(): String {
+            return this@MainActivity.getOrCreateRegId()
+        }
+
+        @JavascriptInterface
+        fun isAccountActive(): Boolean {
+            return this@MainActivity.isAccountActive()
         }
 
         @JavascriptInterface
