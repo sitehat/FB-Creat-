@@ -49,8 +49,7 @@
             font-size: 0.9rem;
             margin-right: 12px;
         }
-        /* কাস্টম পপআপ বক্স যা ১০০% কাজ করবে */
-        #customModal {
+        .custom-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -58,14 +57,17 @@
             z-index: 9999;
             justify-content: center;
             align-items: center;
+            padding: 15px;
         }
         .modal-box {
             background: #fff;
-            width: 90%;
-            max-width: 400px;
+            width: 100%;
+            max-width: 420px;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .recharge-box {
             background-color: #eef5ff;
@@ -73,6 +75,14 @@
             border-radius: 10px;
             padding: 15px;
             margin-top: 15px;
+        }
+        .receipt-box {
+            background: #fff;
+            border: 2px dashed #198754;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
         }
     </style>
 </head>
@@ -101,6 +111,7 @@
             <p class="text-muted small">Your Smart Solution for Social Media and Email</p>
 
             <div class="mt-4">
+                <!-- ১ নম্বর অপশন (লক সিস্টেম সহ) -->
                 <div class="action-btn" onclick="handleNewFbAccount()">
                     <div>
                         <span class="btn-number">1</span>
@@ -109,29 +120,32 @@
                     <i class="bi bi-lock-fill text-danger" id="lockIcon"></i>
                 </div>
 
-                <a href="https://t.me/hasanroni993" target="_blank" class="action-btn">
+                <!-- ২ নম্বর অপশন (Gmail / Outlook) -->
+                <div class="action-btn" onclick="openGmailModal()">
                     <div>
                         <span class="btn-number">2</span>
                         Buy gmail outlook
                     </div>
                     <i class="bi bi-chevron-right text-muted"></i>
-                </a>
+                </div>
 
-                <a href="https://t.me/hasanroni993" target="_blank" class="action-btn">
+                <!-- ৩ নম্বর অপশন (Proxy) -->
+                <div class="action-btn" onclick="openProxyModal()">
                     <div>
                         <span class="btn-number">3</span>
                         Buy proxy
                     </div>
                     <i class="bi bi-chevron-right text-muted"></i>
-                </a>
+                </div>
 
-                <a href="https://t.me/hasanroni993" target="_blank" class="action-btn">
+                <!-- ৪ নম্বর অপশন (VPN) -->
+                <div class="action-btn" onclick="openVpnModal()">
                     <div>
                         <span class="btn-number">4</span>
                         Buy vpn
                     </div>
                     <i class="bi bi-chevron-right text-muted"></i>
-                </a>
+                </div>
             </div>
         </div>
 
@@ -150,32 +164,205 @@
         Powered by <span class="text-white fw-semibold">Hasan</span>
     </footer>
 
-    <!-- কাস্টম মাই প্রোফাইল পপআপ -->
-    <div id="customModal">
+    <!-- ২ নম্বর অপশন: জিমেইল/আউটলুক অর্ডার ও রিসিভ জেনারেটর পপআপ -->
+    <div id="gmailModal" class="custom-modal">
+        <div class="modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold m-0 text-primary"><i class="bi bi-envelope-check me-2"></i>Gmail & Outlook Store</h5>
+                <button type="button" class="btn-close" onclick="closeGmailModal()"></button>
+            </div>
+            
+            <div id="gmailFormSection">
+                <p class="text-muted small mb-2">স্টক দেখে আপনার পছন্দের আইটেম ও পরিমাণ সিলেক্ট করুন।</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Account / Domain</label>
+                    <select id="itemSelect" class="form-select form-select-sm fw-bold"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Quantity (পরিমাণ)</label>
+                    <input type="number" id="qtyInput" class="form-control form-control-sm fw-bold" value="10" min="1" oninput="calculateGmailTotal()">
+                </div>
+
+                <div class="alert alert-info py-2 small mb-3">
+                    <strong>Total Price: ৳ <span id="gmailTotalPrice">10</span></strong>
+                </div>
+
+                <button class="btn btn-primary btn-sm w-100 fw-bold mb-2" onclick="proceedToPayment('gmail')">Confirm Order & Pay</button>
+            </div>
+
+            <!-- পেমেন্ট সেকশন -->
+            <div id="gmailPaymentSection" style="display: none;">
+                <div class="recharge-box small mb-3">
+                    <div class="fw-bold text-primary mb-1">Send Money (বিকাশ / নগদ)</div>
+                    <div class="text-dark fw-semibold">Personal Number: <span class="text-danger fw-bold">01326027993</span></div>
+                    <p class="text-muted mt-1 mb-0" style="font-size: 0.75rem;">এই নাম্বারে টাকা পাঠিয়ে নিচে ট্রানজেকশন আইডি (TrxID) দিন।</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Transaction ID (TrxID)</label>
+                    <input type="text" id="gmailTrxId" class="form-control form-control-sm fw-bold text-uppercase" placeholder="Enter TrxID">
+                </div>
+
+                <button class="btn btn-success btn-sm w-100 fw-bold" onclick="generateReceipt('gmail')">Generate Money Receipt</button>
+            </div>
+
+            <!-- মানি রিসিভ সেকশন -->
+            <div id="gmailReceiptSection" class="receipt-box">
+                <div class="text-center border-bottom pb-2 mb-2">
+                    <h6 class="fw-bold text-success m-0"><i class="bi bi-check-circle-fill me-1"></i> MONEY RECEIPT</h6>
+                    <small class="text-muted" style="font-size: 0.7rem;">FB-Creat Store</small>
+                </div>
+                <div class="small mb-2">
+                    <div><b>Order No:</b> <span id="rGmailOrderNo">#1024</span></div>
+                    <div><b>Item:</b> <span id="rGmailItem">Outlook.fr</span></div>
+                    <div><b>Quantity:</b> <span id="rGmailQty">10</span> Pcs</div>
+                    <div><b>Total Paid:</b> ৳ <span id="rGmailTotal">10</span></div>
+                    <div><b>TrxID:</b> <span id="rGmailTrx" class="text-danger fw-bold">XYZ123</span></div>
+                </div>
+                <p class="text-muted text-center mb-2" style="font-size: 0.7rem;">রিসিভের স্ক্রিনশট বা তথ্য টেলিগ্রামে পাঠান।</p>
+                <a href="https://t.me/hasanroni993" target="_blank" class="btn btn-info text-white btn-sm w-100 fw-bold">
+                    <i class="bi bi-telegram me-1"></i> Send Receipt to Telegram
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ৩ নম্বর অপশন: প্রক্সি স্টক ও অর্ডার পপআপ -->
+    <div id="proxyModal" class="custom-modal">
+        <div class="modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold m-0 text-primary"><i class="bi bi-shield-lock me-2"></i>Proxy Store</h5>
+                <button type="button" class="btn-close" onclick="closeProxyModal()"></button>
+            </div>
+            
+            <div id="proxyFormSection">
+                <p class="text-muted small mb-2">প্রক্সি স্টক ও দাম নিচে দেওয়া হলো।</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Proxy Package</label>
+                    <select id="proxySelect" class="form-select form-select-sm fw-bold"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Quantity</label>
+                    <input type="number" id="proxyQtyInput" class="form-control form-control-sm fw-bold" value="1" min="1" oninput="calculateProxyTotal()">
+                </div>
+
+                <div class="alert alert-info py-2 small mb-3">
+                    <strong>Total Price: ৳ <span id="proxyTotalPrice">120</span></strong>
+                </div>
+
+                <button class="btn btn-primary btn-sm w-100 fw-bold mb-2" onclick="proceedToPayment('proxy')">Confirm Order & Pay</button>
+            </div>
+
+            <div id="proxyPaymentSection" style="display: none;">
+                <div class="recharge-box small mb-3">
+                    <div class="fw-bold text-primary mb-1">Send Money (বিকাশ / নগদ)</div>
+                    <div class="text-dark fw-semibold">Personal Number: <span class="text-danger fw-bold">01326027993</span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Transaction ID (TrxID)</label>
+                    <input type="text" id="proxyTrxId" class="form-control form-control-sm fw-bold text-uppercase" placeholder="Enter TrxID">
+                </div>
+                <button class="btn btn-success btn-sm w-100 fw-bold" onclick="generateReceipt('proxy')">Generate Money Receipt</button>
+            </div>
+
+            <div id="proxyReceiptSection" class="receipt-box">
+                <div class="text-center border-bottom pb-2 mb-2">
+                    <h6 class="fw-bold text-success m-0">MONEY RECEIPT</h6>
+                </div>
+                <div class="small mb-2">
+                    <div><b>Order No:</b> <span id="rProxyOrderNo">#5521</span></div>
+                    <div><b>Item:</b> <span id="rProxyItem">US Private Proxy</span></div>
+                    <div><b>Total Paid:</b> ৳ <span id="rProxyTotal">120</span></div>
+                    <div><b>TrxID:</b> <span id="rProxyTrx" class="text-danger fw-bold">XYZ</span></div>
+                </div>
+                <a href="https://t.me/hasanroni993" target="_blank" class="btn btn-info text-white btn-sm w-100 fw-bold">
+                    <i class="bi bi-telegram me-1"></i> Send Receipt to Telegram
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ৪ নম্বর অপশন: ভিপিএন স্টক ও অর্ডার পপআপ -->
+    <div id="vpnModal" class="custom-modal">
+        <div class="modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold m-0 text-primary"><i class="bi bi-globe me-2"></i>VPN Store (7, 14, 30 Days)</h5>
+                <button type="button" class="btn-close" onclick="closeVpnModal()"></button>
+            </div>
+            
+            <div id="vpnFormSection">
+                <p class="text-muted small mb-2">ভিপিএনগুলোর স্টক, মেয়াদ ও দাম নিচে দেওয়া হলো।</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select VPN & Duration</label>
+                    <select id="vpnSelect" class="form-select form-select-sm fw-bold"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Quantity</label>
+                    <input type="number" id="vpnQtyInput" class="form-control form-control-sm fw-bold" value="1" min="1" oninput="calculateVpnTotal()">
+                </div>
+
+                <div class="alert alert-info py-2 small mb-3">
+                    <strong>Total Price: ৳ <span id="vpnTotalPrice">50</span></strong>
+                </div>
+
+                <button class="btn btn-primary btn-sm w-100 fw-bold mb-2" onclick="proceedToPayment('vpn')">Confirm Order & Pay</button>
+            </div>
+
+            <div id="vpnPaymentSection" style="display: none;">
+                <div class="recharge-box small mb-3">
+                    <div class="fw-bold text-primary mb-1">Send Money (বিকাশ / নগদ)</div>
+                    <div class="text-dark fw-semibold">Personal Number: <span class="text-danger fw-bold">01326027993</span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Transaction ID (TrxID)</label>
+                    <input type="text" id="vpnTrxId" class="form-control form-control-sm fw-bold text-uppercase" placeholder="Enter TrxID">
+                </div>
+                <button class="btn btn-success btn-sm w-100 fw-bold" onclick="generateReceipt('vpn')">Generate Money Receipt</button>
+            </div>
+
+            <div id="vpnReceiptSection" class="receipt-box">
+                <div class="text-center border-bottom pb-2 mb-2">
+                    <h6 class="fw-bold text-success m-0">MONEY RECEIPT</h6>
+                </div>
+                <div class="small mb-2">
+                    <div><b>Order No:</b> <span id="rVpnOrderNo">#8892</span></div>
+                    <div><b>Item:</b> <span id="rVpnItem">NordVPN</span></div>
+                    <div><b>Total Paid:</b> ৳ <span id="rVpnTotal">50</span></div>
+                    <div><b>TrxID:</b> <span id="rVpnTrx" class="text-danger fw-bold">XYZ</span></div>
+                </div>
+                <a href="https://t.me/hasanroni993" target="_blank" class="btn btn-info text-white btn-sm w-100 fw-bold">
+                    <i class="bi bi-telegram me-1"></i> Send Receipt to Telegram
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- মাই প্রোফাইল পপআপ -->
+    <div id="customModal" class="custom-modal">
         <div class="modal-box">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0"><i class="bi bi-person-gear me-2"></i>My Profile</h5>
                 <button type="button" class="btn-close" onclick="closeProfileModal()"></button>
             </div>
-            
             <label class="form-label text-muted small fw-semibold">Registration ID</label>
             <div class="input-group mb-3">
                 <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
                 <button class="btn btn-primary" onclick="copyRegId()">Copy</button>
             </div>
-
             <label class="form-label text-muted small fw-semibold">Subscription Status</label>
             <div class="mb-3">
                 <span class="badge bg-danger p-2" id="modalStatusBadge">Inactive (Locked)</span>
             </div>
-
             <div class="recharge-box small">
                 <div class="fw-bold text-primary mb-1">30 Days Package (30 TK)</div>
                 <div class="text-dark fw-semibold mb-1">bKash / Nagad: <span class="text-primary">01326027993</span></div>
-                <p class="text-muted mb-2" style="font-size: 0.8rem;">
-                    আইডি কপি করে সেন্ড মানি করার পর টেলিগ্রাম বা হোয়াটসঅ্যাপে আপনার আইডি জানান।
-                </p>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mt-2">
                     <a href="https://wa.me/8801326027993" target="_blank" class="btn btn-success btn-sm w-50">WhatsApp</a>
                     <a href="https://t.me/hasanroni993" target="_blank" class="btn btn-info text-white btn-sm w-50">Telegram</a>
                 </div>
@@ -184,15 +371,84 @@
     </div>
 
     <script>
+        const defaultData = {
+            gmail: [
+                { id: 'g1', name: 'Outlook.fr', stock: 500, price: 1 },
+                { id: 'g2', name: 'Outlook.at', stock: 300, price: 1 },
+                { id: 'g3', name: 'Outlook.se', stock: 250, price: 1 },
+                { id: 'g4', name: 'Outlook.de', stock: 400, price: 1 },
+                { id: 'g5', name: 'Outlook.it', stock: 150, price: 1 },
+                { id: 'g6', name: 'Outlook.es', stock: 200, price: 1 },
+                { id: 'g7', name: 'Outlook.com', stock: 1000, price: 2 },
+                { id: 'g8', name: 'Gmail.com (Fresh)', stock: 800, price: 2 },
+                { id: 'g9', name: 'Gmail.com (Old/Aged)', stock: 120, price: 5 }
+            ],
+            proxy: [
+                { id: 'p1', name: 'US Private Proxy (1 Month)', stock: 150, price: 120 },
+                { id: 'p2', name: 'UK Mobile 4G Proxy (1 Month)', stock: 45, price: 350 },
+                { id: 'p3', name: 'Datacenter Proxy (1 Month)', stock: 300, price: 80 },
+                { id: 'p4', name: 'Canada Static Proxy (1 Month)', stock: 90, price: 150 },
+                { id: 'p5', name: 'Germany Residential Proxy', stock: 60, price: 200 }
+            ],
+            vpn: [
+                { id: 'v1', name: 'NordVPN - ৭ দিন', stock: 40, price: 50 },
+                { id: 'v2', name: 'NordVPN - ১৪ দিন', stock: 35, price: 90 },
+                { id: 'v3', name: 'NordVPN - ৩০ দিন', stock: 50, price: 150 },
+                { id: 'v4', name: 'ExpressVPN - ৭ দিন', stock: 30, price: 60 },
+                { id: 'v5', name: 'ExpressVPN - ১৪ দিন', stock: 25, price: 110 },
+                { id: 'v6', name: 'ExpressVPN - ৩০ দিন', stock: 40, price: 180 },
+                { id: 'v7', name: 'Surfshark - ৭ দিন', stock: 60, price: 40 },
+                { id: 'v8', name: 'Surfshark - ১৪ দিন', stock: 45, price: 75 },
+                { id: 'v9', name: 'Surfshark - ৩০ দিন', stock: 70, price: 100 },
+                { id: 'v10', name: 'PIA VPN - ৩০ দিন', stock: 25, price: 120 },
+                { id: 'v11', name: 'CyberGhost VPN - ৩০ দিন', stock: 35, price: 90 },
+                { id: 'v12', name: 'ProtonVPN Plus - ৩০ দিন', stock: 30, price: 130 }
+            ]
+        };
+
+        function getStoreData(type) {
+            let saved = localStorage.getItem('fb_store_' + type);
+            if (!saved) {
+                localStorage.setItem('fb_store_' + type, JSON.stringify(defaultData[type]));
+                return defaultData[type];
+            }
+            return JSON.parse(saved);
+        }
+
+        function saveStoreData(type, data) {
+            localStorage.setItem('fb_store_' + type, JSON.stringify(data));
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             checkStatusUI();
+            renderDropdowns();
         });
+
+        function renderDropdowns() {
+            renderSelect('gmail', 'itemSelect', calculateGmailTotal);
+            renderSelect('proxy', 'proxySelect', calculateProxyTotal);
+            renderSelect('vpn', 'vpnSelect', calculateVpnTotal);
+        }
+
+        function renderSelect(type, elementId, calcFunc) {
+            const items = getStoreData(type);
+            const select = document.getElementById(elementId);
+            select.innerHTML = '';
+            items.forEach((item, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.setAttribute('data-price', item.price);
+                opt.setAttribute('data-stock', item.stock);
+                opt.innerHTML = `${item.name} | স্টক: ${item.stock} পিস | ৳${item.price}`;
+                select.appendChild(opt);
+            });
+            calcFunc();
+        }
 
         function checkStatusUI() {
             if (window.AndroidBridge) {
                 const regId = window.AndroidBridge.getRegId();
                 document.getElementById('modalRegId').value = regId;
-
                 const isActive = window.AndroidBridge.isAccountActive();
                 const badge = document.getElementById('modalStatusBadge');
                 const lockIcon = document.getElementById('lockIcon');
@@ -209,37 +465,112 @@
             }
         }
 
-        function openProfileModal() {
-            checkStatusUI();
-            document.getElementById('customModal').style.display = 'flex';
+        function calculateGmailTotal() {
+            const select = document.getElementById('itemSelect');
+            if(select.selectedIndex === -1) return;
+            const price = parseInt(select.options[select.selectedIndex].getAttribute('data-price'));
+            const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+            document.getElementById('gmailTotalPrice').innerText = price * qty;
         }
 
-        function closeProfileModal() {
-            document.getElementById('customModal').style.display = 'none';
+        function calculateProxyTotal() {
+            const select = document.getElementById('proxySelect');
+            if(select.selectedIndex === -1) return;
+            const price = parseInt(select.options[select.selectedIndex].getAttribute('data-price'));
+            const qty = parseInt(document.getElementById('proxyQtyInput').value) || 1;
+            document.getElementById('proxyTotalPrice').innerText = price * qty;
         }
+
+        function calculateVpnTotal() {
+            const select = document.getElementById('vpnSelect');
+            if(select.selectedIndex === -1) return;
+            const price = parseInt(select.options[select.selectedIndex].getAttribute('data-price'));
+            const qty = parseInt(document.getElementById('vpnQtyInput').value) || 1;
+            document.getElementById('vpnTotalPrice').innerText = price * qty;
+        }
+
+        document.getElementById('itemSelect').addEventListener('change', calculateGmailTotal);
+        document.getElementById('proxySelect').addEventListener('change', calculateProxyTotal);
+        document.getElementById('vpnSelect').addEventListener('change', calculateVpnTotal);
+
+        function proceedToPayment(type) {
+            document.getElementById(type + 'FormSection').style.display = 'none';
+            document.getElementById(type + 'PaymentSection').style.display = 'block';
+        }
+
+        function generateReceipt(type) {
+            const trxId = document.getElementById(type + 'TrxId').value.trim();
+            if(!trxId) {
+                alert("দয়া করে ট্রানজেকশন আইডি দিন!");
+                return;
+            }
+
+            const selectEl = document.getElementById(type === 'gmail' ? 'itemSelect' : (type === 'proxy' ? 'proxySelect' : 'vpnSelect'));
+            const selectedIndex = selectEl.selectedIndex;
+            const qtyInput = document.getElementById(type === 'gmail' ? 'qtyInput' : (type === 'proxy' ? 'proxyQtyInput' : 'vpnQtyInput'));
+            const qty = parseInt(qtyInput.value);
+
+            let items = getStoreData(type);
+            if (items[selectedIndex].stock < qty) {
+                alert("দুঃখিত, পর্যাপ্ত স্টক নেই!");
+                return;
+            }
+
+            items[selectedIndex].stock -= qty;
+            saveStoreData(type, items);
+            renderDropdowns();
+
+            const itemName = items[selectedIndex].name;
+            const total = document.getElementById(type + 'TotalPrice').innerText;
+            const randomOrderNo = "#" + Math.floor(100000 + Math.random() * 900000);
+
+            document.getElementById('r' + capitalize(type) + 'OrderNo').innerText = randomOrderNo;
+            document.getElementById('r' + capitalize(type) + 'Item').innerText = itemName;
+            if(type === 'gmail') document.getElementById('rGmailQty').innerText = qty;
+            document.getElementById('r' + capitalize(type) + 'Total').innerText = total;
+            document.getElementById('r' + capitalize(type) + 'Trx').innerText = trxId;
+
+            document.getElementById(type + 'PaymentSection').style.display = 'none';
+            document.getElementById(type + 'ReceiptSection').style.display = 'block';
+        }
+
+        function capitalize(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function openGmailModal() { resetModal('gmail'); document.getElementById('gmailModal').style.display = 'flex'; }
+        function closeGmailModal() { document.getElementById('gmailModal').style.display = 'none'; }
+
+        function openProxyModal() { resetModal('proxy'); document.getElementById('proxyModal').style.display = 'flex'; }
+        function closeProxyModal() { document.getElementById('proxyModal').style.display = 'none'; }
+
+        function openVpnModal() { resetModal('vpn'); document.getElementById('vpnModal').style.display = 'flex'; }
+        function closeVpnModal() { document.getElementById('vpnModal').style.display = 'none'; }
+
+        function resetModal(type) {
+            renderDropdowns();
+            document.getElementById(type + 'FormSection').style.display = 'block';
+            document.getElementById(type + 'PaymentSection').style.display = 'none';
+            document.getElementById(type + 'ReceiptSection').style.display = 'none';
+            if(document.getElementById(type + 'TrxId')) document.getElementById(type + 'TrxId').value = '';
+        }
+
+        function openProfileModal() { checkStatusUI(); document.getElementById('customModal').style.display = 'flex'; }
+        function closeProfileModal() { document.getElementById('customModal').style.display = 'none'; }
 
         function copyRegId() {
             const regId = document.getElementById('modalRegId').value;
-            if (window.AndroidBridge) {
-                window.AndroidBridge.copyToClipboardJs(regId);
-            }
+            if (window.AndroidBridge) { window.AndroidBridge.copyToClipboardJs(regId); }
         }
 
         function handleNewFbAccount() {
             if (window.AndroidBridge) {
                 const isActive = window.AndroidBridge.isAccountActive();
-                if (isActive) {
-                    window.AndroidBridge.openFbLite();
-                } else {
-                    alert("Your account is locked! Please check 'My Profile' for ID and payment.");
-                    openProfileModal();
-                }
+                if (isActive) { window.AndroidBridge.openFbLite(); }
+                else { alert("Your account is locked! Please check 'My Profile'."); openProfileModal(); }
             }
         }
-
-        function handleHomeClick() {
-            handleNewFbAccount();
-        }
+        function handleHomeClick() { handleNewFbAccount(); }
     </script>
 </body>
 </html>
