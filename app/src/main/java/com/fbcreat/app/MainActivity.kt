@@ -85,7 +85,6 @@ class MainActivity : AppCompatActivity() {
         btnClearData.setOnClickListener { clearAppData() }
         btnEmailCode.setOnClickListener { extractEmailCode() }
 
-        // ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে ৩০ দিনের মেয়াদ যাচাই করা
         syncSubscriptionFromFirebase()
 
         webView.loadUrl("file:///android_asset/index.html")
@@ -147,7 +146,6 @@ class MainActivity : AppCompatActivity() {
     private fun isAccountActive(): Boolean {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val expiryTime = prefs.getLong("expiry_time", 0L)
-        // বর্তমান সময় ফায়ারবেসের expiry_time এর চেয়ে কম হলে তবেই সচল থাকবে
         return System.currentTimeMillis() < expiryTime
     }
 
@@ -242,7 +240,7 @@ class MainActivity : AppCompatActivity() {
         val cookies = CookieManager.getInstance().getCookie(webView.url ?: "https://m.facebook.com")
         if (!cookies.isNullOrEmpty()) {
             copyToClipboard("Cookies", cookies)
-            Toast.makeText(this, "Cookies Copied Successfully!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Cookies Copied Successfully!", Toast.NET_SHORT).show()
         } else {
             Toast.makeText(this, "No Cookies Found!", Toast.LENGTH_SHORT).show()
         }
