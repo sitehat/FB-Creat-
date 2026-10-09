@@ -85,52 +85,51 @@ class MainActivity : AppCompatActivity() {
         btnClearData.setOnClickListener { clearAppData() }
         btnEmailCode.setOnClickListener { extractEmailCode() }
 
+        syncSubscriptionFromFirebase()
+
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // উভয় পথ থেকেই ফায়ারবেস চেক করার ফাংশন
-    private fun fetchExpiryTimeFromFirebase(regId: String): Long {
-        var expiryTime = 0L
+    private fun syncSubscriptionFromFirebase() {
+        val regId = getOrCreateRegId()
         
-        // ১. সরাসরি মেইন লেভেল চেক (যেমন: /FBC-C2F513.json)
-        try {
-            val url1 = URL("$FIREBASE_DATABASE_URL/$regId.json")
-            val conn1 = url1.openConnection() as HttpURLConnection
-            conn1.requestMethod = "GET"
-            conn1.connectTimeout = 4000
-            conn1.readTimeout = 4000
-            if (conn1.responseCode == 200) {
-                val response1 = conn1.inputStream.bufferedReader().readText()
-                if (response1.isNotEmpty() && response1 != "null") {
-                    val json1 = JSONObject(response1)
-                    expiryTime = json1.optLong("expiry_time", 0L)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        // ২. যদি মেইন লেভেলে না পাওয়া যায়, তবে /users/ পাথে চেক
-        if (expiryTime == 0L) {
+        Thread {
             try {
-                val url2 = URL("$FIREBASE_DATABASE_URL/users/$regId.json")
-                val conn2 = url2.openConnection() as HttpURLConnection
-                conn2.requestMethod = "GET"
-                conn2.connectTimeout = 4000
-                conn2.readTimeout = 4000
-                if (conn2.responseCode == 200) {
-                    val response2 = conn2.inputStream.bufferedReader().readText()
-                    if (response2.isNotEmpty() && response2 != "null") {
-                        val json2 = JSONObject(response2)
-                        expiryTime = json2.optLong("expiry_time", 0L)
-                    }
+                // ১. মূল পাথে চেক
+                var expiryTime = checkUrl("$FIREBASE_DATABASE_URL/$regId.json")
+                
+                // ২. না পেলে /users/ পাথে চেক
+                if (expiryTime == 0L) {
+                    expiryTime = checkUrl("$FIREBASE_DATABASE_URL/users/$regId.json")
+                }
+
+                if (expiryTime > 0L) {
+                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    prefs.edit().putLong("expiry_time", expiryTime).apply()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }
+        }.start()
+    }
 
-        return expiryTime
+    private fun checkUrl(urlString: String): Long {
+        return try {
+            val url = URL(urlString)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 3000
+            conn.readTimeout = 3000
+            if (conn.responseCode == 200) {
+                val response = conn.inputStream.bufferedReader().readText()
+                if (response.isNotEmpty() && response != "null") {
+                    val json = JSONObject(response)
+                    json.optLong("expiry_time", 0L)
+                } else 0L
+            } else 0L
+        } catch (e: Exception) {
+            0L
+        }
     }
 
     private fun getOrCreateRegId(): String {
@@ -147,6 +146,12 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString("reg_id", id).apply()
         }
         return id
+    }
+
+    private fun isAccountActive(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val expiryTime = prefs.getLong("expiry_time", 0L)
+        return System.currentTimeMillis() < expiryTime
     }
 
     private fun extractProfileLink() {
@@ -306,15 +311,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
-        fun checkSubscriptionStatus(): String {
-            val regId = getOrCreateRegId()
-            val expiryTime = fetchExpiryTimeFromFirebase(regId)
-            val currentTime = System.currentTimeMillis()
-
-            val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-            prefs.edit().putLong("expiry_time", expiryTime).apply()
-
-            return if (currentTime < expiryTime) "ACTIVE" else "INACTIVE"
+        fun isAccountActive(): Boolean {
+            return this@MainActivity.isAccountActive()
         }
 
         @JavascriptInterface
