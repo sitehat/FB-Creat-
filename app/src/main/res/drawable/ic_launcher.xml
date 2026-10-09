@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ফেসবুকের সিগনেচার ব্লু ব্যাকগ্রাউন্ড -->
+    <path
+        android:fillColor="#1877F2"
+        android:pathData="M18,0 L90,0 A18,18 0 0,1 108,18 L108,90 A18,18 0 0,1 90,108 L18,108 A18,18 0 0,1 0,90 L0,18 A18,18 0 0,1 18,0 Z" />
+
+    <!-- সুন্দর সাদা "FB" লেখা লোগো -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M26,32 H46 V39 H33 V49 H43 V56 H33 V76 H26 Z M52,32 H68 C74,32 78,35 78,40 C78,44 75,47 70,48 C76,49 79,53 79,60 C79,68 73,76 66,76 H52 Z M59,38 H66 C68.5,38 70.5,39 70.5,41 C70.5,43 68.5,44 H66 H59 Z M59,53 H67 C70,53 71.5,54.5 71.5,57.5 C71.5,60.5 70,69 H66 H59 Z" />
+
+</vector>
