@@ -24,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFloatingPlus: CardView
     private lateinit var panelTools: CardView
 
-    // 🔴 আপনার ফায়ারবেস ডাটাবেজ URL (আপনার স্ক্রিনশট অনুযায়ী সেট করা)
     private val FIREBASE_DATABASE_URL = "https://fb--creat-default-rtdb.firebaseio.com"
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -43,7 +42,6 @@ class MainActivity : AppCompatActivity() {
         val btnClearData: View = findViewById(R.id.btnClearData)
         val btnEmailCode: View = findViewById(R.id.btnEmailCode)
 
-        // Configure WebView Settings
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -57,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
-        // JavaScript Bridge setup
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
         webView.webViewClient = object : WebViewClient() {
@@ -72,80 +69,70 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 1. Floating Plus (+) Click
         btnFloatingPlus.setOnClickListener {
             btnFloatingPlus.visibility = View.GONE
             panelTools.visibility = View.VISIBLE
         }
 
-        // 2. Minimize (-) Click
         btnMinimize.setOnClickListener {
             panelTools.visibility = View.GONE
             btnFloatingPlus.visibility = View.VISIBLE
         }
 
-        // 3. Profile Link Action
-        btnProfileLink.setOnClickListener {
-            extractProfileLink()
-        }
+        btnProfileLink.setOnClickListener { extractProfileLink() }
+        btnAuthentic.setOnClickListener { extract2FAKeyAndCode() }
+        btnCookies.setOnClickListener { extractCookies() }
+        btnClearData.setOnClickListener { clearAppData() }
+        btnEmailCode.setOnClickListener { extractEmailCode() }
 
-        // 4. Authentic Action
-        btnAuthentic.setOnClickListener {
-            extract2FAKeyAndCode()
-        }
-
-        // 5. Cookies Action
-        btnCookies.setOnClickListener {
-            extractCookies()
-        }
-
-        // 6. Clear Data Action
-        btnClearData.setOnClickListener {
-            clearAppData()
-        }
-
-        // 7. Email Verification Code Action
-        btnEmailCode.setOnClickListener {
-            extractEmailCode()
-        }
-
-        // Sync subscription from Firebase on App Start
-        syncSubscriptionFromFirebase()
-
-        // Load Main App Dashboard
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // Check Firebase for Active Status
-    private fun syncSubscriptionFromFirebase() {
-        val regId = getOrCreateRegId()
-        val apiUrl = "$FIREBASE_DATABASE_URL/users/$regId.json"
+    // উভয় পথ থেকেই ফায়ারবেস চেক করার ফাংশন
+    private fun fetchExpiryTimeFromFirebase(regId: String): Long {
+        var expiryTime = 0L
+        
+        // ১. সরাসরি মেইন লেভেল চেক (যেমন: /FBC-C2F513.json)
+        try {
+            val url1 = URL("$FIREBASE_DATABASE_URL/$regId.json")
+            val conn1 = url1.openConnection() as HttpURLConnection
+            conn1.requestMethod = "GET"
+            conn1.connectTimeout = 4000
+            conn1.readTimeout = 4000
+            if (conn1.responseCode == 200) {
+                val response1 = conn1.inputStream.bufferedReader().readText()
+                if (response1.isNotEmpty() && response1 != "null") {
+                    val json1 = JSONObject(response1)
+                    expiryTime = json1.optLong("expiry_time", 0L)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
-        Thread {
+        // ২. যদি মেইন লেভেলে না পাওয়া যায়, তবে /users/ পাথে চেক
+        if (expiryTime == 0L) {
             try {
-                val url = URL(apiUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.connectTimeout = 5000
-                conn.readTimeout = 5000
-
-                if (conn.responseCode == 200) {
-                    val response = conn.inputStream.bufferedReader().readText()
-                    if (response.isNotEmpty() && response != "null") {
-                        val json = JSONObject(response)
-                        val expiryTime = json.optLong("expiry_time", 0L)
-                        
-                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                        prefs.edit().putLong("expiry_time", expiryTime).apply()
+                val url2 = URL("$FIREBASE_DATABASE_URL/users/$regId.json")
+                val conn2 = url2.openConnection() as HttpURLConnection
+                conn2.requestMethod = "GET"
+                conn2.connectTimeout = 4000
+                conn2.readTimeout = 4000
+                if (conn2.responseCode == 200) {
+                    val response2 = conn2.inputStream.bufferedReader().readText()
+                    if (response2.isNotEmpty() && response2 != "null") {
+                        val json2 = JSONObject(response2)
+                        expiryTime = json2.optLong("expiry_time", 0L)
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }.start()
+        }
+
+        return expiryTime
     }
 
-    // Generate or get Unique Device Registration ID
     private fun getOrCreateRegId(): String {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         var id = prefs.getString("reg_id", null)
@@ -160,20 +147,6 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString("reg_id", id).apply()
         }
         return id
-    }
-
-    // Check Subscription Expiry
-    private fun isAccountActive(): Boolean {
-        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        val expiryTime = prefs.getLong("expiry_time", 0L)
-        return System.currentTimeMillis() < expiryTime
-    }
-
-    // Launch Facebook Lite / Mobile Web
-    fun openFbLite() {
-        runOnUiThread {
-            webView.loadUrl("https://m.facebook.com/")
-        }
     }
 
     private fun extractProfileLink() {
@@ -322,7 +295,9 @@ class MainActivity : AppCompatActivity() {
     inner class WebAppInterface {
         @JavascriptInterface
         fun openFbLite() {
-            this@MainActivity.openFbLite()
+            runOnUiThread {
+                webView.loadUrl("https://m.facebook.com/")
+            }
         }
 
         @JavascriptInterface
@@ -331,8 +306,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
-        fun isAccountActive(): Boolean {
-            return this@MainActivity.isAccountActive()
+        fun checkSubscriptionStatus(): String {
+            val regId = getOrCreateRegId()
+            val expiryTime = fetchExpiryTimeFromFirebase(regId)
+            val currentTime = System.currentTimeMillis()
+
+            val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            prefs.edit().putLong("expiry_time", expiryTime).apply()
+
+            return if (currentTime < expiryTime) "ACTIVE" else "INACTIVE"
         }
 
         @JavascriptInterface
