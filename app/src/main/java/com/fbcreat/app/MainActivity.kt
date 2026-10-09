@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         val btnAuthentic: View = findViewById(R.id.btnAuthentic)
         val btnCookies: View = findViewById(R.id.btnCookies)
         val btnClearData: View = findViewById(R.id.btnClearData)
+        val btnEmailCode: View = findViewById(R.id.btnEmailCode)
 
         // Configure WebView Settings
         webView.settings.apply {
@@ -93,6 +94,11 @@ class MainActivity : AppCompatActivity() {
         // 6. Clear Data Action
         btnClearData.setOnClickListener {
             clearAppData()
+        }
+
+        // 7. Email Verification Code Action
+        btnEmailCode.setOnClickListener {
+            extractEmailCode()
         }
 
         // Load Main App Dashboard
@@ -232,6 +238,25 @@ class MainActivity : AppCompatActivity() {
         
         Toast.makeText(this, "Data Cleared! Reloading FB...", Toast.LENGTH_SHORT).show()
         webView.loadUrl("https://m.facebook.com/")
+    }
+
+    // Extract Email Verification Code (OTP)
+    private fun extractEmailCode() {
+        webView.evaluateJavascript(
+            "(function() { " +
+            "  var text = document.body.innerText || ''; " +
+            "  var match = text.match(/FB-\\d{5}/i) || text.match(/\\b\\d{5,6}\\b/); " +
+            "  return match ? match[0] : ''; " +
+            "})();"
+        ) { value ->
+            val cleanCode = value?.replace("\"", "")?.replace("\\n", "")?.trim() ?: ""
+            if (cleanCode.isNotEmpty() && cleanCode != "null") {
+                copyToClipboard("Email Verification Code", cleanCode)
+                Toast.makeText(this, "Verification Code Copied: $cleanCode", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "Verification Code not found on page!", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun copyToClipboard(label: String, text: String) {
