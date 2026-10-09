@@ -60,7 +60,7 @@
 </head>
 <body>
 
-    <!-- Header Navbar -->
+    <!-- Header Navbar - My Profile সবসময় খোলা থাকবে -->
     <nav class="navbar navbar-expand bg-white shadow-sm px-2 sticky-top">
         <div class="container-fluid d-flex align-items-center justify-content-between">
             <a class="navbar-brand text-primary m-0" href="#">
@@ -68,8 +68,8 @@
             </a>
             <div class="d-flex align-items-center gap-2">
                 <a href="#" class="nav-link text-primary small fw-bold">Home</a>
-                <a href="#" class="nav-link text-secondary small">About us</a>
                 <a href="https://t.me/hasanroni993" class="nav-link text-secondary small">Support</a>
+                <!-- মাই প্রোফাইল বাটন যা যেকোনো সময় ইউজার আইডি দেখতে সাহায্য করবে -->
                 <button class="btn btn-primary btn-sm rounded-pill px-2 py-1 small" onclick="openProfileModal()">
                     <i class="bi bi-person-circle"></i> My profile
                 </button>
@@ -84,12 +84,13 @@
             <p class="text-muted small">Your Smart Solution for Social Media and Email</p>
 
             <div class="mt-4">
+                <!-- ১ নম্বর অপশন: সাবস্ক্রিপশন থাকলে খুলবে, না থাকলে মাই প্রোফাইলে নিয়ে যাবে -->
                 <div class="action-btn" onclick="handleNewFbAccount()">
                     <div>
                         <span class="btn-number">1</span>
                         New Fb Account
                     </div>
-                    <i class="bi bi-chevron-right text-muted" id="lockIcon"></i>
+                    <i class="bi bi-lock-fill text-danger" id="lockIcon"></i>
                 </div>
 
                 <a href="https://t.me/hasanroni993" class="action-btn">
@@ -135,7 +136,7 @@
         Powered by <span class="text-white fw-semibold">Hasan</span>
     </footer>
 
-    <!-- My Profile Modal -->
+    <!-- My Profile Modal (যেখানে ইউজার আইডি ও পেমেন্ট ইনফো থাকবে) -->
     <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content p-3">
@@ -144,21 +145,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label text-muted small fw-semibold">Registration ID</label>
+                    <label class="form-label text-muted small fw-semibold">Registration ID (Copy this)</label>
                     <div class="input-group mb-3">
-                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Generating...">
+                        <input type="text" id="modalRegId" class="form-control fw-bold bg-light" readonly value="Loading...">
                         <button class="btn btn-primary" onclick="copyRegId()">Copy</button>
                     </div>
 
                     <label class="form-label text-muted small fw-semibold">Subscription Status</label>
                     <div id="statusBadgeContainer" class="mb-3">
-                        <span class="badge bg-success p-2" id="modalStatusBadge">Active (Lifetime)</span>
+                        <span class="badge bg-danger p-2" id="modalStatusBadge">Inactive (Expired)</span>
                     </div>
 
                     <div class="recharge-box small">
-                        <div class="fw-bold text-primary mb-1">Support & Contact</div>
-                        <div class="text-dark fw-semibold mb-1">Telegram / WhatsApp: <span class="text-primary">01326027993</span></div>
-                        <div class="d-flex gap-2 mt-2">
+                        <div class="fw-bold text-primary mb-1">30 Days Package (30 TK)</div>
+                        <div class="text-dark fw-semibold mb-1">bKash / Nagad: <span class="text-primary">01326027993</span></div>
+                        <p class="text-muted mb-2" style="font-size: 0.8rem;">
+                            আপনার আইডি কপি করে সেন্ড মানি করুন, এরপর WhatsApp বা Telegram-এ আপনার আইডি পাঠিয়ে ৩০ দিনের মেয়াদ সচল করে নিন।
+                        </p>
+                        <div class="d-flex gap-2">
                             <a href="https://wa.me/8801326027993" class="btn btn-success btn-sm w-50">WhatsApp</a>
                             <a href="https://t.me/hasanroni993" class="btn btn-info text-white btn-sm w-50">Telegram</a>
                         </div>
@@ -174,48 +178,55 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-            getOrGenerateRegId();
+            checkSubscriptionStatus();
         });
 
-        // ব্রাউজারের লোকাল স্টোরেজে ইউনিক আইডি তৈরি ও সেভ করার ফাংশন (যা কখনো মুছবে না)
-        function getOrGenerateRegId() {
-            let regId = localStorage.getItem('fb_creat_reg_id');
-            if (!regId) {
-                const randomHex = Math.random().toString(36).substring(2, 8).toUpperCase();
-                regId = "FBC-" + randomHex;
-                localStorage.setItem('fb_creat_reg_id', regId);
+        function checkSubscriptionStatus() {
+            if (window.AndroidBridge) {
+                const regId = window.AndroidBridge.getRegId();
+                document.getElementById('modalRegId').value = regId;
+
+                const isActive = window.AndroidBridge.isAccountActive();
+                const badge = document.getElementById('modalStatusBadge');
+                const lockIcon = document.getElementById('lockIcon');
+
+                if (isActive) {
+                    badge.className = "badge bg-success p-2";
+                    badge.innerHTML = "Active (30 Days)";
+                    lockIcon.className = "bi bi-chevron-right text-muted text-primary";
+                } else {
+                    badge.className = "badge bg-danger p-2";
+                    badge.innerHTML = "Inactive (Expired)";
+                    lockIcon.className = "bi bi-lock-fill text-danger";
+                }
             }
-            document.getElementById('modalRegId').value = regId;
-            return regId;
         }
 
         function openProfileModal() {
-            getOrGenerateRegId();
+            checkSubscriptionStatus();
             profileModal.show();
         }
 
         function copyRegId() {
             const regId = document.getElementById('modalRegId').value;
-            navigator.clipboard.writeText(regId).then(function() {
-                alert("Registration ID Copied: " + regId);
-            }, function(err) {
-                // ফলব্যাক কপি মেথড
-                const textBox = document.getElementById('modalRegId');
-                textBox.select();
-                document.execCommand('copy');
-                alert("Registration ID Copied: " + regId);
-            });
+            if (window.AndroidBridge) {
+                window.AndroidBridge.copyToClipboardJs(regId);
+            }
         }
 
         function handleNewFbAccount() {
             if (window.AndroidBridge) {
-                window.AndroidBridge.openFbLite();
-            } else {
-                // সরাসরি ব্রাউজার বা ফেসবুক ওপেন করার বিকল্প
-                window.location.href = "https://m.facebook.com/";
+                const isActive = window.AndroidBridge.isAccountActive();
+                if (isActive) {
+                    window.AndroidBridge.openFbLite();
+                } else {
+                    // অ্যাকাউন্ট ইনঅ্যাক্টিভ হলে মাই প্রোফাইল ওপেন করে পেমেন্ট করতে বলবে
+                    alert("Your account is inactive! Please check 'My Profile' to renew subscription.");
+                    openProfileModal();
+                }
             }
         }
     </script>
 </body>
-                    </html>
-        
+                            </html>
+                            
