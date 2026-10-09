@@ -85,12 +85,13 @@ class MainActivity : AppCompatActivity() {
         btnClearData.setOnClickListener { clearAppData() }
         btnEmailCode.setOnClickListener { extractEmailCode() }
 
+        // অ্যাপ চালু হওয়ার সাথে সাথে ফায়ারবেস থেকে লেটেস্ট স্ট্যাটাস সিংক করবে
         syncSubscriptionFromFirebase()
 
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // ফায়ারবেস থেকে সরাসরি status চেক করার নিরাপদ ব্যাকগ্রাউন্ড মেথড
+    // ফায়ারবেস থেকে সরাসরি status চেক করে লোকাল মেমোরিতে পার্মানেন্ট সেভ করার মেথড
     private fun syncSubscriptionFromFirebase() {
         val regId = getOrCreateRegId()
         Thread {
@@ -99,8 +100,12 @@ class MainActivity : AppCompatActivity() {
                 if (!isActive) {
                     isActive = checkFirebaseStatus("$FIREBASE_DATABASE_URL/users/$regId.json")
                 }
-                val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                prefs.edit().putBoolean("is_active", isActive).apply()
+                
+                // ফায়ারবেস থেকে true পেলে সাথে সাথে লোকাল প্রেফারেন্সে সেভ করে রাখব
+                if (isActive) {
+                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    prefs.edit().putBoolean("is_active", true).apply()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -112,13 +117,16 @@ class MainActivity : AppCompatActivity() {
             val url = URL(urlString)
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
-            conn.connectTimeout = 3000
-            conn.readTimeout = 3000
+            conn.connectTimeout = 4000
+            conn.readTimeout = 4000
             if (conn.responseCode == 200) {
                 val response = conn.inputStream.bufferedReader().readText()
                 if (response.isNotEmpty() && response != "null") {
-                    val json = JSONObject(response)
-                    // ফায়ারবেসে status সরাসরি true বা "true" আছে কি না চেক করবে
+                    val cleanResponse = response.trim()
+                    if (cleanResponse == "true") {
+                        return true
+                    }
+                    val json = JSONObject(cleanResponse)
                     if (json.has("status")) {
                         try {
                             json.getBoolean("status")
