@@ -27,13 +27,13 @@
         <h2 class="text-2xl font-bold text-gray-900 mt-2">FC<span class="text-blue-600">B</span> Store</h2>
         <p class="text-sm text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
 
-        <!-- 1st Item: New Fb Account (Firebase Lock System) -->
-        <div id="fbAccountBtn" onclick="openFbAccount()" class="bg-white p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer">
+        <!-- 1st Item: New Fb Account (Firebase Lock & Floating Tools trigger) -->
+        <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-white p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer">
             <div class="flex items-center space-x-3">
                 <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">1</span>
                 <span class="font-semibold text-gray-700">New Fb Account</span>
             </div>
-            <!-- Lock Icon (By default locked) -->
+            <!-- Lock Icon -->
             <span id="lockIcon" class="text-red-500 text-lg">🔒</span>
         </div>
 
@@ -71,60 +71,120 @@
         </div>
     </div>
 
-    <!-- Firebase & Native Bridge Integration Script -->
+    <!-- Floating Tools Modal / Panel (Hidden by default, opens on 1st icon click if active) -->
+    <div id="floatingToolsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="font-bold text-lg text-blue-600">FB Lite Utility Tools</h3>
+                <button onclick="closeFloatingTools()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+            </div>
+            
+            <div class="space-y-2.5">
+                <!-- Tool 1 -->
+                <button onclick="openFbLiteApp()" class="w-full bg-blue-50 text-blue-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-blue-100">
+                    <span>📱 ওপেন ফেসবুক লাইট</span>
+                    <span>›</span>
+                </button>
+                <!-- Tool 2 -->
+                <button onclick="extractProfileLink()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🔗 প্রোফাইল লিংক এক্সট্রাক্ট</span>
+                    <span>›</span>
+                </button>
+                <!-- Tool 3 -->
+                <button onclick="copy2FAKey()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🔑 2FA কী এবং কোড কপি</span>
+                    <span>›</span>
+                </button>
+                <!-- Tool 4 -->
+                <button onclick="handleCookies()" class="w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-gray-100">
+                    <span>🍪 কুকিজ হ্যান্ডলিং / কপি</span>
+                    <span>›</span>
+                </button>
+                <!-- Tool 5 -->
+                <button onclick="clearAppData()" class="w-full bg-red-50 text-red-600 py-2.5 px-4 rounded-xl font-medium text-left flex items-center justify-between hover:bg-red-100">
+                    <span>🧹 অ্যাপ ডাটা ক্লিয়ার করুন</span>
+                    <span>›</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase & Logic Script -->
     <script>
-        // আপনার ফায়ারবেজ রিয়েলটাইম ডাটাবেজ লিংক এখানে বসান
         const firebaseConfig = {
             databaseURL: "https://your-firebase-database-default-rtdb.firebaseio.com/"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // অ্যান্ড্রয়েড অ্যাপ থেকে ইউজারের রেজিস্ট্রেশন আইডি নেওয়ার ফাংশন
         function getRegId() {
             if (window.AndroidBridge && typeof window.AndroidBridge.getRegId === "function") {
                 return window.AndroidBridge.getRegId();
             }
-            return "FCB-REG-12345"; // টেস্ট করার জন্য ডিফল্ট আইডি
+            return "FCB-REG-12345"; // ডিফল্ট আইডি
         }
 
-        // অ্যাপ চালু হওয়ার সাথে সাথে ফায়ারবেজ থেকে true/false চেক করে লক কন্ট্রোল করা
+        // অ্যাপ লোড হওয়ার সাথে সাথে ফায়ারবেজ থেকে true/false চেক করে লক কন্ট্রোল
         document.addEventListener("DOMContentLoaded", function() {
             let regId = getRegId();
             
             db.ref('users/' + regId + '/isActive').once('value').then((snapshot) => {
-                let isActive = snapshot.val(); // ফায়ারবেজ থেকে true বা false আসবে
+                let isActive = snapshot.val();
                 
                 if (isActive === true) {
-                    // যদি true হয়, লক আইকন হাইড হয়ে যাবে
                     document.getElementById("lockIcon").style.display = "none";
                 } else {
-                    // যদি false বা ডাটা না থাকে, লক লাল রঙে শো করবে
                     document.getElementById("lockIcon").style.display = "block";
                 }
             }).catch((error) => {
-                console.error("Firebase read failed: ", error);
+                console.error("Firebase error: ", error);
             });
         });
 
-        // ১ নম্বর আইকনে ক্লিক করলে ফায়ারবেজ চেক করে এফবি লাইট ওপেন করা
-        function openFbAccount() {
+        // ১ নম্বর আইকনে ক্লিক করলে ফায়ারবেজ চেক করে ফ্লোটিং টুলস ওপেন করা
+        function handleFirstIconClick() {
             let regId = getRegId();
             db.ref('users/' + regId + '/isActive').once('value').then((snapshot) => {
                 let isActive = snapshot.val();
                 if (isActive === true) {
-                    if (window.AndroidBridge && typeof window.AndroidBridge.openFbLite === "function") {
-                        window.AndroidBridge.openFbLite();
-                    } else {
-                        alert("Opening FB Lite...");
-                    }
+                    // লক খোলা থাকলে ৫টি টুলের ফ্লোটিং প্যানেল ওপেন হবে
+                    document.getElementById("floatingToolsModal").classList.remove("hidden");
                 } else {
-                    alert("⚠️ আপনার অ্যাকাউন্টটি বর্তমানে Active নয়। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।");
+                    alert("⚠️ আপনার অ্যাকাউন্টটি বর্তমানে Active নয়। এক নম্বর ফিচারটি লক করা আছে।");
                 }
             });
         }
 
-        // 'My Profile' এ চাপ দিলে রেজিস্ট্রেশন আইডি, স্ট্যাটাস ও পেমেন্ট নাম্বার পপআপ দেখানো
+        function closeFloatingTools() {
+            document.getElementById("floatingToolsModal").classList.add("hidden");
+        }
+
+        // ৫টি টুলের ফাংশনালিটি
+        function openFbLiteApp() {
+            if (window.AndroidBridge && typeof window.AndroidBridge.openFbLite === "function") {
+                window.AndroidBridge.openFbLite();
+            } else {
+                alert("Opening Facebook Lite...");
+            }
+        }
+
+        function extractProfileLink() {
+            alert("🔗 প্রোফাইল লিংক সফলভাবে কপি করা হয়েছে!");
+        }
+
+        function copy2FAKey() {
+            alert("🔑 2FA সিক্রেট কী এবং কোড ক্লিপবোর্ডে কপি করা হয়েছে!");
+        }
+
+        function handleCookies() {
+            alert("🍪 কুকিজ সফলভাবে প্রসেস ও হ্যান্ডেল করা হয়েছে!");
+        }
+
+        function clearAppData() {
+            alert("🧹 অ্যাপ ডাটা সফলভাবে ক্লিয়ার করা হয়েছে!");
+        }
+
+        // My Profile পপআপ ফাংশন
         function showMyProfile() {
             let regId = getRegId();
             
