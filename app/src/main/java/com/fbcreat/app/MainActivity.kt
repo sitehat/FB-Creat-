@@ -19,7 +19,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // লেআউটের সাথে নিখুঁতভাবে আইডি কানেক্ট করা হলো
         webView = findViewById(R.id.webview)
         
         val webSettings = webView.settings
@@ -54,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     class WebAppInterface(private val mContext: MainActivity) {
         @JavascriptInterface
         fun getRegId(): String {
+            // ইউজারের নিজস্ব রেজিস্টার্ড আইডি এখানে থাকবে
             return "FCB-REG-12345"
         }
 
