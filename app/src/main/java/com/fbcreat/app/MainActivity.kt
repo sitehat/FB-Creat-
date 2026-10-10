@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Bundle
+import android.os.Message
 import android.view.View
 import android.webkit.*
 import android.widget.Button
@@ -54,13 +55,30 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
-        // ১. অত্যন্ত গুরুত্বপূর্ণ: ফেসবুকের সিকিউরিটি চেক ও পপআপ হ্যান্ডেল করার জন্য WebChromeClient
+        // ফেসবুক সেটিংস ও পপআপ উইন্ডো ক্র্যাশ রোধ করার নিরাপদ WebChromeClient
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
-                val transport = resultMsg?.obj as? WebView.WebViewTransport
-                transport?.webView = view
-                resultMsg?.sendToTarget()
-                return true
+            override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean {
+                try {
+                    val transport = resultMsg?.obj as? WebView.WebViewTransport
+                    if (transport != null) {
+                        val dummyWebView = WebView(this@MainActivity)
+                        dummyWebView.webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                val url = request?.url?.toString()
+                                if (!url.isNullOrEmpty()) {
+                                    webView.loadUrl(url)
+                                }
+                                return true
+                            }
+                        }
+                        transport.webView = dummyWebView
+                        resultMsg.sendToTarget()
+                        return true
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                return false
             }
         }
 
@@ -87,7 +105,6 @@ class MainActivity : AppCompatActivity() {
                     } catch (e: Exception) {}
                 }
 
-                // POST রিকোয়েস্ট এবং ফেসবুকের সিকিউরিটি রিডাইরেক্ট স্মুথ রাখার জন্য false
                 return false
             }
 
