@@ -11,7 +11,6 @@ import android.os.Message
 import android.view.View
 import android.webkit.*
 import android.widget.Button
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -20,6 +19,10 @@ import androidx.appcompat.app.AppCompatActivity
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import java.nio.ByteBuffer
+import java.net.HttpURLConnection
+import java.net.URL
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,6 +51,11 @@ class MainActivity : AppCompatActivity() {
         webSettings.setSupportMultipleWindows(true)
         webSettings.javaScriptCanOpenWindowsAutomatically = true
         webSettings.userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
+        // --- ফেসবুক ব্রাউজিং ফাস্ট ও স্মুথ করার অপ্টিমাইজেশন সেটিংস ---
+        webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+        webSettings.offscreenPreRaster = true
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
@@ -86,7 +94,6 @@ class MainActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url.toString()
                 
-                // টেলিগ্রাম বা কাস্টম স্কিম হ্যান্ডেল করা
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -118,7 +125,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // প্লাস/মাইনাস টগল বাটন ক্লিক
         nativeToggleBtn.setOnClickListener {
             isMenuOpen = !isMenuOpen
             if (isMenuOpen) {
@@ -144,7 +150,7 @@ class MainActivity : AppCompatActivity() {
             toggleMenu()
         }
         findViewById<Button>(R.id.btnCode).setOnClickListener {
-            getVerificationCode()
+            fetchMailVerificationCode()
             toggleMenu()
         }
         findViewById<Button>(R.id.btnClearData).setOnClickListener {
@@ -171,76 +177,68 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- নেটিভ টুলস ফাংশনসমূহ ---
-
+    // --- ১. প্রোফাইল টুল: শুধুমাত্র ইউজার আইডি (সংখ্যা) কপি করা ---
     private fun extractProfileId() {
-        val url = webView.url ?: ""
-        val regex = "(?:id=|profile\\.php\\?id=|\\/)([0-9]{5,})".toRegex()
-        val match = regex.find(url)
-        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        val cookieManager = CookieManager.getInstance()
+        val cookies = cookieManager.getCookie("https://m.facebook.com") ?: cookieManager.getCookie("https://facebook.com") ?: ""
         
-        if (match != null) {
-            val profileId = match.groupValues[1]
-            clipboard.setPrimaryClip(ClipData.newPlainText("Profile ID", profileId))
-            Toast.makeText(this, "✅ Profile ID Copied: $profileId", Toast.LENGTH_SHORT).show()
-        } else {
-            val clipData = clipboard.primaryClip
-            if (clipData != null && clipData.itemCount > 0) {
-                val clipText = clipData.getItemAt(0).text?.toString() ?: ""
-                val clipMatch = regex.find(clipText)
-                if (clipMatch != null) {
-                    val profileId = clipMatch.groupValues[1]
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Profile ID", profileId))
-                    Toast.makeText(this, "✅ Profile ID Copied: $profileId", Toast.LENGTH_SHORT).show()
-                    return
-                }
+        var cUser = ""
+        for (cookie in cookies.split(";")) {
+            val parts = cookie.trim().split("=")
+            if (parts.size == 2 && parts[0] == "c_user") {
+                cUser = parts[1]
+                break
             }
-            Toast.makeText(this, "⚠️ Profile ID not found!", Toast.LENGTH_SHORT).show()
+        }
+
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        if (cUser.isNotEmpty()) {
+            clipboard.setPrimaryClip(ClipData.newPlainText("Profile ID", cUser))
+            Toast.makeText(this, "✅ Profile ID Copied: $cUser", Toast.LENGTH_LONG).show()
+        } else {
+            val url = webView.url ?: ""
+            val match = "(?:id=|profile\\.php\\?id=|\\/)([0-9]{5,})".toRegex().find(url)
+            if (match != null) {
+                val profileId = match.groupValues[1]
+                clipboard.setPrimaryClip(ClipData.newPlainText("Profile ID", profileId))
+                Toast.makeText(this, "✅ Profile ID Copied: $profileId", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "⚠️ প্রথমে ফেসবুক অ্যাকাউন্টে লগইন করুন!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
+    // --- ২. টু-ফ্যাক্টর টুল: পেজ DOM ও ক্লিপবোর্ড থেকে অটো কি রিড করে ইনস্ট্যান্ট কোড জেনারেট ---
     private fun extractAndGen2FA() {
-        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        var secretKey = ""
-        val clipData = clipboard.primaryClip
-        if (clipData != null && clipData.itemCount > 0) {
-            val clipText = clipData.getItemAt(0).text?.toString() ?: ""
-            val cleanText = clipText.replace("\\s+".toRegex(), "").toUpperCase()
-            val match = "[A-Z2-7]{16,32}".toRegex().find(cleanText)
-            if (match != null) {
-                secretKey = match.value
-            }
-        }
-        
-        if (secretKey.isNotEmpty()) {
-            process2FA(secretKey)
-        } else {
-            val input = EditText(this)
-            input.hint = "Secret Key দিন"
-            input.setPadding(40, 40, 40, 40)
-            AlertDialog.Builder(this)
-                .setTitle("🔑 2FA Secret Key")
-                .setView(input)
-                .setPositiveButton("জেনারেট") { _, _ ->
-                    val manualKey = input.text.toString().trim()
-                    if (manualKey.isNotEmpty()) {
-                        process2FA(manualKey)
-                    } else {
-                        Toast.makeText(this, "⚠️ সিক্রেট কী খালি রাখা যাবে না!", Toast.LENGTH_SHORT).show()
+        webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var match = text.match(/[A-Z2-7]{16,32}/); return match ? match[0] : ''; })();") { jsResult ->
+            var secretKey = jsResult?.replace("\"", "")?.trim() ?: ""
+            
+            if (secretKey.isEmpty() || secretKey == "null") {
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clipData = clipboard.primaryClip
+                if (clipData != null && clipData.itemCount > 0) {
+                    val clipText = clipData.getItemAt(0).text?.toString() ?: ""
+                    val match = "[A-Z2-7]{16,32}".toRegex().find(clipText.replace("\\s+".toRegex(), "").toUpperCase())
+                    if (match != null) {
+                        secretKey = match.value
                     }
                 }
-                .setNegativeButton("বাতিল", null)
-                .show()
+            }
+
+            if (secretKey.isNotEmpty() && secretKey != "null") {
+                process2FA(secretKey)
+            } else {
+                Toast.makeText(this, "⚠️ কোনো 2FA Secret Key পাওয়া যায়নি!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun process2FA(secretKey: String) {
         val code = generateTOTP(secretKey)
         if (code != null) {
-            val result = "$secretKey | $code"
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("2FA Code", result))
-            Toast.makeText(this, "✅ 2FA Copied!\nCode: $code", Toast.LENGTH_LONG).show()
+            clipboard.setPrimaryClip(ClipData.newPlainText("2FA Code", code))
+            Toast.makeText(this, "✅ 2FA Code Copied: $code", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(this, "⚠️ ভুল বা অবৈধ সিক্রেট কী!", Toast.LENGTH_SHORT).show()
         }
@@ -278,7 +276,6 @@ class MainActivity : AppCompatActivity() {
         var buffer = 0
         var bitsLeft = 0
         val output = mutableListOf<Byte>()
-        
         for (char in base32) {
             if (char == '=') break
             val valIndex = base32Chars.indexOf(char)
@@ -293,6 +290,7 @@ class MainActivity : AppCompatActivity() {
         return output.toByteArray()
     }
 
+    // --- ৩. কুকিজ টুল: চলমান সেশনের কুকিজ কপি করা ---
     private fun extractCookies() {
         val url = webView.url ?: "https://m.facebook.com"
         val cookieManager = CookieManager.getInstance()
@@ -303,52 +301,94 @@ class MainActivity : AppCompatActivity() {
             clipboard.setPrimaryClip(ClipData.newPlainText("Cookies", cookies))
             Toast.makeText(this, "✅ Cookies Copied!", Toast.LENGTH_SHORT).show()
         } else {
-            val clipData = clipboard.primaryClip
-            if (clipData != null && clipData.itemCount > 0) {
-                val clipText = clipData.getItemAt(0).text?.toString() ?: ""
-                if (clipText.contains("c_user") || clipText.contains("xs")) {
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Cookies", clipText))
-                    Toast.makeText(this, "✅ Cookies Copied!", Toast.LENGTH_SHORT).show()
-                    return
-                }
-            }
-            Toast.makeText(this, "⚠️ No Cookies found!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "⚠️ সেশন কুকিজ পাওয়া যায়নি!", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun getVerificationCode() {
+    // --- ৪. কোড টুল: ডং ভ্যান মেইল API (Dong Van Mail API) কানেকশন ---
+    private fun fetchMailVerificationCode() {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = clipboard.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
             val text = clipData.getItemAt(0).text?.toString() ?: ""
-            val regex = "\\b\\d{5,6}\\b".toRegex()
-            val match = regex.find(text)
-            if (match != null) {
+            val match = "\\b\\d{5,6}\\b".toRegex().find(text)
+            if (match != null && text.length < 50) {
                 val code = match.value
                 clipboard.setPrimaryClip(ClipData.newPlainText("Verification Code", code))
-                Toast.makeText(this, "✅ Code Copied: $code", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "✅ Code Copied from Clipboard: $code", Toast.LENGTH_SHORT).show()
                 return
             }
         }
-        Toast.makeText(this, "⚠️ Code not found in clipboard!", Toast.LENGTH_SHORT).show()
+
+        Toast.makeText(this, "Checking Mail API...", Toast.LENGTH_SHORT).show()
+
+        webView.evaluateJavascript("JSON.stringify({email: localStorage.getItem('fb_email') || '', refresh_token: localStorage.getItem('fb_refresh_token') || ''});") { jsonResult ->
+            try {
+                Thread {
+                    try {
+                        val apiUrl = URL("https://tools.dongvanfb.net/api/graph_code")
+                        val conn = apiUrl.openConnection() as HttpURLConnection
+                        conn.requestMethod = "POST"
+                        conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                        conn.doOutput = true
+
+                        val postData = jsonResult?.replace("\\", "") ?: "{\"email\":\"\"}"
+                        val os = conn.outputStream
+                        os.write(postData.toByteArray(Charsets.UTF_8))
+                        os.flush()
+                        os.close()
+
+                        if (conn.responseCode == 200) {
+                            val br = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
+                            val response = StringBuilder()
+                            var line: String?
+                            while (br.readLine().also { line = it } != null) {
+                                response.append(line?.trim())
+                            }
+                            br.close()
+
+                            val codeMatch = "\"code\"\\s*:\\s*\"([0-9]{5,6})\"".toRegex().find(response.toString())
+                            if (codeMatch != null) {
+                                val code = codeMatch.groupValues[1]
+                                runOnUiThread {
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Mail Code", code))
+                                    Toast.makeText(this, "✅ Mail Code Copied: $code", Toast.LENGTH_LONG).show()
+                                }
+                            } else {
+                                runOnUiThread {
+                                    Toast.makeText(this, "⚠️ মেইলে নতুন কোনো কোড আসেনি!", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            runOnUiThread {
+                                Toast.makeText(this, "⚠️ Mail API Response Error!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            Toast.makeText(this, "⚠️ Mail API Connection Failed!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }.start()
+            } catch (e: Exception) {
+                Toast.makeText(this, "⚠️ Mail Read Error!", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    // --- শুধুমাত্র ফেসবুকের ক্যাশ ও কুকিজ ক্লিয়ার করার ফাংশন (রেজিস্ট্রেশন আইডি সুরক্ষিত থাকবে) ---
+    // --- ৫. ক্লিয়ার ডাটা টুল: রেজিস্ট্রেশন আইডি সুরক্ষিত রেখে শুধুমাত্র ফেসবুক ক্যাশ ক্লিয়ার করা ---
     private fun clearFacebookDataOnly() {
         AlertDialog.Builder(this)
             .setTitle("Clear Facebook Cache")
             .setMessage("আপনি কি শুধুমাত্র ফেসবুকের ক্যাশ ও কুকিজ ক্লিয়ার করতে চান? (আপনার রেজিস্ট্রেশন আইডি সুরক্ষিত থাকবে)")
             .setPositiveButton("হ্যাঁ") { _, _ ->
-                // ১. রেজিস্ট্রেশন আইডি ব্যাকআপ রাখা
                 webView.evaluateJavascript("localStorage.getItem('fcb_unique_user_id');") { regIdValue ->
                     val savedRegId = regIdValue?.replace("\"", "")
 
-                    // ২. শুধুমাত্র ফেসবুক কুকিজ ও ব্রাউজার ক্যাশ ক্লিয়ার করা
                     webView.clearCache(true)
                     webView.clearHistory()
                     CookieManager.getInstance().removeAllCookies(null)
 
-                    // ৩. হোম পেজে ফিরে যাওয়া এবং আইডি রিস্টোর করা
                     webView.loadUrl("file:///android_asset/index.html")
 
                     if (!savedRegId.isNullOrEmpty() && savedRegId != "null") {
