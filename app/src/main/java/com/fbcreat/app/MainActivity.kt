@@ -74,8 +74,8 @@ class MainActivity : AppCompatActivity() {
                     } catch (e: Exception) {}
                 }
 
-                view.loadUrl(url)
-                return true
+                // লগইন ফর্ম সাবমিশন ও অন্যান্য পেজ স্মুথলি লোড হওয়ার জন্য false রিটার্ন করতে হবে
+                return false
             }
         }
 
