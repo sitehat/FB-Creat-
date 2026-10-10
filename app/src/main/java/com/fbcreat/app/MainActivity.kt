@@ -11,6 +11,7 @@ import android.os.Message
 import android.view.View
 import android.webkit.*
 import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -208,9 +209,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ২. টু-ফ্যাক্টর টুল: পেজ DOM ও ক্লিপবোর্ড থেকে অটো কি রিড করে ইনস্ট্যান্ট কোড জেনারেট ---
+    // --- ২. টু-ফ্যাক্টর টুল: স্পেসযুক্ত কী রিমোভ করে অটো ডিটেক্ট ও কোড জেনারেট ---
     private fun extractAndGen2FA() {
-        webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var match = text.match(/[A-Z2-7]{16,32}/); return match ? match[0] : ''; })();") { jsResult ->
+        // পেজের টেক্সট থেকে সমস্ত স্পেস এবং হাইফেন রিমোভ করে বেস থ্রিটি (Base32) কী স্ক্যান করা
+        webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var clean = text.replace(/[\\s\\-\\_]+/g, '').toUpperCase(); var match = clean.match(/[A-Z2-7]{16,32}/); return match ? match[0] : ''; })();") { jsResult ->
             var secretKey = jsResult?.replace("\"", "")?.trim() ?: ""
             
             if (secretKey.isEmpty() || secretKey == "null") {
@@ -218,7 +220,8 @@ class MainActivity : AppCompatActivity() {
                 val clipData = clipboard.primaryClip
                 if (clipData != null && clipData.itemCount > 0) {
                     val clipText = clipData.getItemAt(0).text?.toString() ?: ""
-                    val match = "[A-Z2-7]{16,32}".toRegex().find(clipText.replace("\\s+".toRegex(), "").toUpperCase())
+                    val cleanClip = clipText.replace("[^A-Z2-7]".toRegex(), "").toUpperCase()
+                    val match = "[A-Z2-7]{16,32}".toRegex().find(cleanClip)
                     if (match != null) {
                         secretKey = match.value
                     }
@@ -228,9 +231,30 @@ class MainActivity : AppCompatActivity() {
             if (secretKey.isNotEmpty() && secretKey != "null") {
                 process2FA(secretKey)
             } else {
-                Toast.makeText(this, "⚠️ কোনো 2FA Secret Key পাওয়া যায়নি!", Toast.LENGTH_SHORT).show()
+                runOnUiThread {
+                    showManual2FADialog()
+                }
             }
         }
+    }
+
+    private fun showManual2FADialog() {
+        val input = EditText(this)
+        input.hint = "যেমন: PIB2X3MOOJDC5T6T"
+        input.setPadding(40, 40, 40, 40)
+        AlertDialog.Builder(this)
+            .setTitle("🔑 2FA Secret Key দিন")
+            .setView(input)
+            .setPositiveButton("জেনারেট করুন") { _, _ ->
+                val manualKey = input.text.toString().replace("\\s+".toRegex(), "").toUpperCase()
+                if (manualKey.isNotEmpty()) {
+                    process2FA(manualKey)
+                } else {
+                    Toast.makeText(this, "⚠️ সিক্রেট কী খালি রাখা যাবে না!", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("বাতিল", null)
+            .show()
     }
 
     private fun process2FA(secretKey: String) {
@@ -305,9 +329,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ৪. কোড টুল: ডং ভ্যান মেইল API (Dong Van Mail API) কানেকশন ---
+    // --- ৪. কোড টুল: ক্লিপবোর্ড, পেজ DOM এবং ডং ভ্যান মেইল API (Dong Van Mail API) কানেকশন ---
     private fun fetchMailVerificationCode() {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        
+        // ১. প্রথমে ক্লিপবোর্ড চেক করা
         val clipData = clipboard.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
             val text = clipData.getItemAt(0).text?.toString() ?: ""
@@ -320,58 +346,72 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        Toast.makeText(this, "Checking Mail API...", Toast.LENGTH_SHORT).show()
+        // ২. পেজ থেকে কোড চেক করা
+        webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var m = text.match(/\\b\\d{5,6}\\b/); return m ? m[0] : ''; })();") { pageCode ->
+            val codeOnPage = pageCode?.replace("\"", "")?.trim() ?: ""
+            if (codeOnPage.isNotEmpty() && codeOnPage != "null") {
+                clipboard.setPrimaryClip(ClipData.newPlainText("Verification Code", codeOnPage))
+                Toast.makeText(this, "✅ Code Found on Page: $codeOnPage", Toast.LENGTH_LONG).show()
+                return@evaluateJavascript
+            }
 
-        webView.evaluateJavascript("JSON.stringify({email: localStorage.getItem('fb_email') || '', refresh_token: localStorage.getItem('fb_refresh_token') || ''});") { jsonResult ->
-            try {
-                Thread {
-                    try {
-                        val apiUrl = URL("https://tools.dongvanfb.net/api/graph_code")
-                        val conn = apiUrl.openConnection() as HttpURLConnection
-                        conn.requestMethod = "POST"
-                        conn.setRequestProperty("Content-Type", "application/json; utf-8")
-                        conn.doOutput = true
+            // ৩. ডং ভ্যান মেইল API থেকে ফেচ করা
+            Toast.makeText(this, "Checking Mail API...", Toast.LENGTH_SHORT).show()
 
-                        val postData = jsonResult?.replace("\\", "") ?: "{\"email\":\"\"}"
-                        val os = conn.outputStream
-                        os.write(postData.toByteArray(Charsets.UTF_8))
-                        os.flush()
-                        os.close()
+            webView.evaluateJavascript("JSON.stringify({email: localStorage.getItem('fb_email') || localStorage.getItem('email') || '', refresh_token: localStorage.getItem('fb_refresh_token') || localStorage.getItem('refresh_token') || ''});") { jsonResult ->
+                try {
+                    Thread {
+                        try {
+                            val apiUrl = URL("https://tools.dongvanfb.net/api/graph_code")
+                            val conn = apiUrl.openConnection() as HttpURLConnection
+                            conn.requestMethod = "POST"
+                            conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                            conn.doOutput = true
 
-                        if (conn.responseCode == 200) {
-                            val br = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
-                            val response = StringBuilder()
-                            var line: String?
-                            while (br.readLine().also { line = it } != null) {
-                                response.append(line?.trim())
-                            }
-                            br.close()
+                            val postData = jsonResult?.replace("\\", "") ?: "{\"email\":\"\"}"
+                            val os = conn.outputStream
+                            os.write(postData.toByteArray(Charsets.UTF_8))
+                            os.flush()
+                            os.close()
 
-                            val codeMatch = "\"code\"\\s*:\\s*\"([0-9]{5,6})\"".toRegex().find(response.toString())
-                            if (codeMatch != null) {
-                                val code = codeMatch.groupValues[1]
-                                runOnUiThread {
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("Mail Code", code))
-                                    Toast.makeText(this, "✅ Mail Code Copied: $code", Toast.LENGTH_LONG).show()
+                            if (conn.responseCode == 200) {
+                                val br = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
+                                val response = StringBuilder()
+                                var line: String?
+                                while (br.readLine().also { line = it } != null) {
+                                    response.append(line?.trim())
+                                }
+                                br.close()
+
+                                val resStr = response.toString()
+                                val codeMatch = "\"code\"\\s*:\\s*\"([0-9]{5,6})\"".toRegex().find(resStr)
+                                    ?: "\"code\"\\s*:\\s*([0-9]{5,6})".toRegex().find(resStr)
+
+                                if (codeMatch != null) {
+                                    val code = codeMatch.groupValues[1]
+                                    runOnUiThread {
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("Mail Code", code))
+                                        Toast.makeText(this, "✅ Mail Code Copied: $code", Toast.LENGTH_LONG).show()
+                                    }
+                                } else {
+                                    runOnUiThread {
+                                        Toast.makeText(this, "⚠️ মেইলে নতুন কোনো কোড আসেনি!", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             } else {
                                 runOnUiThread {
-                                    Toast.makeText(this, "⚠️ মেইলে নতুন কোনো কোড আসেনি!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this, "⚠️ Mail API Response Error!", Toast.LENGTH_SHORT).show()
                                 }
                             }
-                        } else {
+                        } catch (e: Exception) {
                             runOnUiThread {
-                                Toast.makeText(this, "⚠️ Mail API Response Error!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, "⚠️ Mail API Connection Failed!", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    } catch (e: Exception) {
-                        runOnUiThread {
-                            Toast.makeText(this, "⚠️ Mail API Connection Failed!", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }.start()
-            } catch (e: Exception) {
-                Toast.makeText(this, "⚠️ Mail Read Error!", Toast.LENGTH_SHORT).show()
+                    }.start()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "⚠️ Mail Read Error!", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
