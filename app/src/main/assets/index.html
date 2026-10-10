@@ -9,50 +9,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.4/otpauth.umd.min.js"></script>
-
-    <style>
-        #floatingToggleContainer {
-            position: fixed !important;
-            top: 15px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            z-index: 2147483647 !important;
-        }
-    </style>
 </head>
 
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen relative overflow-x-hidden">
-
-<!-- FLOATING TOGGLE BUTTON (+ / -) -->
-<div id="floatingToggleContainer" class="hidden">
-    <div class="relative flex flex-col items-center">
-        <button id="toggleToolsBtn" onclick="toggleFloatingTools()" class="bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full shadow-2xl flex items-center justify-center font-bold text-2xl border-2 border-white transition-all duration-200">
-            +
-        </button>
-
-        <div id="floatingToolsMenu" class="absolute top-14 bg-white/95 backdrop-blur-md w-44 rounded-2xl p-2 shadow-2xl border border-gray-200 hidden space-y-1.5">
-            <button onclick="autoExtractProfileId()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
-                <span>🔗 Profile</span><span>›</span>
-            </button>
-
-            <button onclick="autoExtractAndGen2FA()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
-                <span>🔑 2FA</span><span>›</span>
-            </button>
-
-            <button onclick="extractCookies()" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
-                <span>🍪 Cookies</span><span>›</span>
-            </button>
-
-            <button onclick="getVerificationCode()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
-                <span>📥 Code</span><span>›</span>
-            </button>
-
-            <button onclick="clearAppData()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
-                <span>🧹 Clear Data</span><span>›</span>
-            </button>
-        </div>
-    </div>
-</div>
 
 <!-- MAIN APP VIEW -->
 <div id="mainAppView" class="flex flex-col min-h-screen">
@@ -333,15 +292,6 @@
         calcGmailTotal();
         calcProxyTotal();
         calcVpnTotal();
-
-        // পেজ লোড হওয়ার সময় যদি ফেসবুক পেজে থাকে, তবে ফ্লোটিং বাটন স্বয়ংক্রিয়ভাবে দৃশ্যমান রাখবে
-        if (window.location.href.includes("facebook.com")) {
-            let floatingTools = document.getElementById("floatingToggleContainer");
-            if (floatingTools) {
-                floatingTools.classList.remove("hidden");
-                floatingTools.style.display = "block";
-            }
-        }
     });
 
     function checkFirebaseStatus() {
@@ -375,12 +325,7 @@
             let data = snapshot.val() || {};
 
             if (data.status === true) {
-                // ১. ভাসমান প্লাস/মাইনাস বাটনটি দৃশ্যমান করা
-                const floatingTools = document.getElementById("floatingToggleContainer");
-                floatingTools.classList.remove("hidden");
-                floatingTools.style.display = "block";
-
-                // ২. অ্যান্ড্রয়েড কোটলিন ব্রিজের মাধ্যমে WebView-এর ভেতরে ফেসবুক লোড করা
+                // অ্যান্ড্রয়েড কোটলিন ব্রিজের মাধ্যমে ফেসবুক ওপেন ও নেটিভ ফ্লোটিং বাটন সচল করা
                 if (window.AndroidBridge && typeof window.AndroidBridge.loadFacebook === "function") {
                     window.AndroidBridge.loadFacebook("https://m.facebook.com");
                 } else {
@@ -390,23 +335,6 @@
                 openProfileModal();
             }
         }).catch(() => openProfileModal());
-    }
-
-    function toggleFloatingTools() {
-        let menu = document.getElementById("floatingToolsMenu");
-        let btn = document.getElementById("toggleToolsBtn");
-
-        if (menu.classList.contains("hidden")) {
-            menu.classList.remove("hidden");
-            btn.innerText = "-";
-            btn.classList.add("bg-red-600");
-            btn.classList.remove("bg-blue-600");
-        } else {
-            menu.classList.add("hidden");
-            btn.innerText = "+";
-            btn.classList.add("bg-blue-600");
-            btn.classList.remove("bg-red-600");
-        }
     }
 
     function openProfileModal() { document.getElementById("profileModal").classList.remove("hidden"); }
