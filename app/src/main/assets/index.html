@@ -16,16 +16,7 @@
             top: 15px !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
-            z-index: 9999999 !important;
-        }
-        #fbViewContainer {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 8888888 !important;
-            background-color: white;
+            z-index: 2147483647 !important;
         }
     </style>
 </head>
@@ -138,23 +129,12 @@
     </div>
 </div>
 
-<!-- IN-APP FACEBOOK DIRECT CONTAINER (NO IFRAME ERROR) -->
-<div id="fbViewContainer" class="hidden flex flex-col">
-    <div class="w-full bg-gray-100 p-2 border-b flex justify-between items-center pt-3 px-4">
-        <span class="text-xs font-bold text-blue-600">Facebook Browser</span>
-        <button onclick="closeFbView()" class="bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow">✕ Close FB</button>
-    </div>
-    <div class="flex-grow w-full relative">
-        <!-- Direct Location Navigation Container -->
-        <div id="fbEmbedArea" class="w-full h-full"></div>
-    </div>
-</div>
-
-<!-- MODAL 1: MY PROFILE / ACTIVATION MODAL -->
+<!-- PROFILE MODAL -->
 <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button onclick="closeModal('profileModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
         <h3 class="font-bold text-lg text-blue-600 mb-1 border-b pb-2">My Profile & Activation</h3>
+
         <div class="bg-blue-50 p-3 rounded-xl mb-3 flex items-center justify-between border border-blue-100 mt-2">
             <div>
                 <span class="text-xs text-gray-500 block">আপনার রেজিস্ট্রেশন আইডি:</span>
@@ -162,15 +142,18 @@
             </div>
             <button onclick="copyRegId()" class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded-lg hover:bg-blue-700">📋 কপি করুন</button>
         </div>
+
         <div class="mb-3 text-xs">
             <span class="text-gray-600">অ্যাকাউন্ট স্ট্যাটাস:</span>
             <span id="displayStatus" class="font-bold ml-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full">নিষ্ক্রিয় (Inactive)</span>
         </div>
+
         <div class="bg-gray-50 p-3 rounded-xl mb-3 border border-gray-200 text-xs space-y-1">
             <div class="font-bold text-gray-700">📦 প্যাকেজ তথ্য:</div>
-            <div class="flex justify-between"><span>প্যাকেজ মেয়াদ:</span> <span class="font-semibold text-gray-800">৩০ দিন</span></div>
-            <div class="flex justify-between"><span>প্যাকেজের মূল্য:</span> <span class="font-bold text-blue-600">৩০০ টাকা</span></div>
+            <div class="flex justify-between"><span>প্যাকেজ মেয়াদ:</span><span class="font-semibold text-gray-800">৩০ দিন</span></div>
+            <div class="flex justify-between"><span>প্যাকেজের মূল্য:</span><span class="font-bold text-blue-600">৩০০ টাকা</span></div>
         </div>
+
         <div class="bg-amber-50 p-3 rounded-xl mb-4 border border-amber-200 text-xs space-y-1">
             <div class="font-bold text-amber-900 mb-1">💳 সেন্ড মানি করুন (Send Money Only):</div>
             <div class="flex justify-between items-center">
@@ -178,14 +161,16 @@
                 <span class="font-mono font-bold text-gray-900 text-sm">01326027993</span>
             </div>
         </div>
+
         <p class="text-[11px] text-gray-500 mb-3 text-center">উক্ত নাম্বারে সেন্ড মানি করে আপনার রেজিস্ট্রেশন আইডিটি টেলিগ্রামে পাঠান। ফায়ারবেস থেকে আইডি একটিভ করে দেওয়া হবে।</p>
+
         <button onclick="openTelegramSupport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl text-xs flex items-center justify-center space-x-2">
             <span>✈️ টেলিগ্রামে পাঠান (@hasanroni993)</span>
         </button>
     </div>
 </div>
 
-<!-- MODAL 2: GMAIL / OUTLOOK STORE -->
+<!-- GMAIL MODAL -->
 <div id="gmailModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button onclick="closeModal('gmailModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
@@ -229,7 +214,7 @@
     </div>
 </div>
 
-<!-- MODAL 3: PROXY STORE -->
+<!-- PROXY MODAL -->
 <div id="proxyModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button onclick="closeModal('proxyModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
@@ -274,7 +259,7 @@
     </div>
 </div>
 
-<!-- MODAL 4: VPN STORE -->
+<!-- VPN MODAL -->
 <div id="vpnModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button onclick="closeModal('vpnModal')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
@@ -348,6 +333,15 @@
         calcGmailTotal();
         calcProxyTotal();
         calcVpnTotal();
+
+        // পেজ লোড হওয়ার সময় যদি ফেসবুক পেজে থাকে, তবে ফ্লোটিং বাটন স্বয়ংক্রিয়ভাবে দৃশ্যমান রাখবে
+        if (window.location.href.includes("facebook.com")) {
+            let floatingTools = document.getElementById("floatingToggleContainer");
+            if (floatingTools) {
+                floatingTools.classList.remove("hidden");
+                floatingTools.style.display = "block";
+            }
+        }
     });
 
     function checkFirebaseStatus() {
@@ -381,22 +375,21 @@
             let data = snapshot.val() || {};
 
             if (data.status === true) {
-                // ১. ফ্লোটিং বাটনটি চালু করা
+                // ১. ভাসমান প্লাস/মাইনাস বাটনটি দৃশ্যমান করা
                 const floatingTools = document.getElementById("floatingToggleContainer");
                 floatingTools.classList.remove("hidden");
                 floatingTools.style.display = "block";
 
-                // ২. সরাসরি ফেসবুক রিডাইরেক্ট করে পেজে লোড করা (iframe ছাড়াই)
-                window.location.href = "https://m.facebook.com";
+                // ২. অ্যান্ড্রয়েড কোটলিন ব্রিজের মাধ্যমে WebView-এর ভেতরে ফেসবুক লোড করা
+                if (window.AndroidBridge && typeof window.AndroidBridge.loadFacebook === "function") {
+                    window.AndroidBridge.loadFacebook("https://m.facebook.com");
+                } else {
+                    window.location.href = "https://m.facebook.com";
+                }
             } else {
                 openProfileModal();
             }
         }).catch(() => openProfileModal());
-    }
-
-    function closeFbView() {
-        document.getElementById("fbViewContainer").classList.add("hidden");
-        document.getElementById("floatingToggleContainer").classList.add("hidden");
     }
 
     function toggleFloatingTools() {
@@ -504,7 +497,7 @@
         openTelegramSupport();
     }
 
-    // SHORTCUT UTILITY TOOLS
+    // UTILITY TOOLS
     function autoExtractProfileId() {
         let targetUrl = window.location.href;
         let match = targetUrl.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/);
