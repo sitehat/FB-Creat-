@@ -14,7 +14,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen relative overflow-x-hidden">
 
-    <!-- FLOATING TOGGLE BUTTON (+ / -) (Hidden by default, appears ONLY when Facebook is opened) -->
+    <!-- FLOATING TOGGLE BUTTON (+ / -) (Hidden by default, appears ONLY when Facebook is active) -->
     <div id="floatingToggleContainer" class="fixed top-3 left-1/2 transform -translate-x-1/2 z-50 hidden">
         <div class="relative flex flex-col items-center">
             <button id="toggleToolsBtn" onclick="toggleFloatingTools()" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-full shadow-2xl flex items-center justify-center font-bold text-2xl border-2 border-white transition-all duration-200">
@@ -118,20 +118,6 @@
         <div class="bg-gray-900 text-gray-300 text-center py-3 text-xs font-medium">
             Powered by Hasan
         </div>
-    </div>
-
-    <!-- IN-APP FACEBOOK BROWSER VIEW (Hidden by default) -->
-    <div id="facebookBrowserView" class="fixed inset-0 bg-white z-30 hidden flex flex-col h-full w-full">
-        <!-- Top Control Bar for In-App Browser -->
-        <div class="bg-gray-900 text-white p-2.5 flex justify-between items-center shadow-md z-40">
-            <button onclick="closeFacebookBrowser()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
-                <span>✕</span> <span>Close FB</span>
-            </button>
-            <span class="text-xs font-mono text-gray-300">m.facebook.com</span>
-            <button onclick="reloadFbFrame()" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-2.5 py-1.5 rounded-lg">🔄</button>
-        </div>
-        <!-- Embedded Mobile Facebook Frame -->
-        <iframe id="fbIframe" src="about:blank" class="w-full flex-grow border-none"></iframe>
     </div>
 
     <!-- MODAL 1: MY PROFILE / ACTIVATION MODAL -->
@@ -373,33 +359,35 @@
             });
         }
 
+        // ১ নম্বর আইকনে ক্লিক করার লজিক (ব্লক এরর মুক্ত ও সরাসরি WebView লোড)
         function handleFirstIconClick() {
             db.ref(currentRegId).once('value').then((snapshot) => {
                 let data = snapshot.val() || {};
                 isAccountActive = (data.status === true);
 
+                let toggleContainer = document.getElementById("floatingToggleContainer");
+
                 if (isAccountActive) {
-                    document.getElementById("facebookBrowserView").classList.remove("hidden");
-                    document.getElementById("fbIframe").src = "https://m.facebook.com";
-                    document.getElementById("floatingToggleContainer").classList.remove("hidden");
+                    // অ্যাকাউন্ট সক্রিয় থাকলে ভাসমান প্লাস বাটন ভেসে উঠবে
+                    if (toggleContainer) {
+                        toggleContainer.classList.remove("hidden");
+                    }
+
+                    // অ্যান্ড্রয়েড ব্রিজ বা সরাসরি পেজ রিডাইরেক্ট দিয়ে ফেসবুক লোড (আইফ্রেম ঝামেলা মুক্ত)
+                    if (window.AndroidBridge && typeof window.AndroidBridge.loadFacebook === "function") {
+                        window.AndroidBridge.loadFacebook("https://m.facebook.com");
+                    } else {
+                        window.location.href = "https://m.facebook.com";
+                    }
                 } else {
+                    if (toggleContainer) {
+                        toggleContainer.classList.add("hidden");
+                    }
                     openProfileModal();
                 }
             }).catch((e) => {
                 openProfileModal();
             });
-        }
-
-        function closeFacebookBrowser() {
-            document.getElementById("facebookBrowserView").classList.add("hidden");
-            document.getElementById("floatingToggleContainer").classList.add("hidden");
-            document.getElementById("floatingToolsMenu").classList.add("hidden");
-            document.getElementById("fbIframe").src = "about:blank";
-        }
-
-        function reloadFbFrame() {
-            let iframe = document.getElementById("fbIframe");
-            iframe.src = iframe.src;
         }
 
         function toggleFloatingTools() {
@@ -508,13 +496,12 @@
         }
 
         // ==========================================
-        // SHORTCUT UTILITY TOOLS (UPDATED 2FA LOGIC)
+        // SHORTCUT UTILITY TOOLS (FUNCTIONAL LOGIC)
         // ==========================================
 
+        // ১. Profile: আইডি এক্সট্রাক্ট
         function autoExtractProfileId() {
-            let iframe = document.getElementById("fbIframe");
-            let targetUrl = iframe.src || window.location.href;
-            
+            let targetUrl = window.location.href;
             let match = targetUrl.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/);
             if (match && match[1]) {
                 navigator.clipboard.writeText(match[1]);
@@ -532,42 +519,28 @@
             }
         }
 
-        // ২. 2FA: পেজ/ক্লিপবোর্ড থেকে সিক্রেট কী কপি করবে এবং সাথে সাথে তার ৬ ডিজিটের কোড তৈরি করে একসাথে কপি করবে
+        // ২. 2FA: সিক্রেট কী ও লাইভ কোড একসাথে কপি করা
         function autoExtractAndGen2FA() {
-            let iframe = document.getElementById("fbIframe");
-            let pageText = "";
-            try {
-                pageText = iframe.contentWindow.document.body.innerText || "";
-            } catch(e) {}
-
-            // পেজের টেক্সট বা ক্লিপবোর্ড থেকে 2FA সিক্রেট কী খোঁজা (১৬ থেকে ৩২ ক্যারেক্টারের Base32 ফরম্যাট)
-            let keyMatch = pageText.match(/\b[A-Z2-7]{16,32}\b/i);
-
-            if (keyMatch) {
-                processSecretKeyAndCopy(keyMatch[0]);
-            } else {
-                // পেজে না পেলে ক্লিপবোর্ড থেকে রিড করবে
-                navigator.clipboard.readText().then(clipText => {
-                    let cleanKey = clipText.replace(/\s+/g, '').toUpperCase();
-                    let clipMatch = cleanKey.match(/[A-Z2-7]{16,32}/);
-                    if (clipMatch) {
-                        processSecretKeyAndCopy(clipMatch[0]);
-                    } else {
-                        let manualKey = prompt("🔑 সিক্রেট কী পাওয়া যায়নি। সিক্রেট কী দিন:");
-                        if (manualKey) {
-                            processSecretKeyAndCopy(manualKey);
-                        }
-                    }
-                }).catch(() => {
-                    let manualKey = prompt("🔑 সিক্রেট কী দিন:");
+            navigator.clipboard.readText().then(clipText => {
+                let cleanKey = clipText ? clipText.replace(/\s+/g, '').toUpperCase() : "";
+                let clipMatch = cleanKey.match(/[A-Z2-7]{16,32}/);
+                
+                if (clipMatch) {
+                    processSecretKeyAndCopy(clipMatch[0]);
+                } else {
+                    let manualKey = prompt("🔑 সিক্রেট কী (Secret Key) দিন:");
                     if (manualKey) {
                         processSecretKeyAndCopy(manualKey);
                     }
-                });
-            }
+                }
+            }).catch(() => {
+                let manualKey = prompt("🔑 সিক্রেট কী দিন:");
+                if (manualKey) {
+                    processSecretKeyAndCopy(manualKey);
+                }
+            });
         }
 
-        // সিক্রেট কী এবং জেনারেট হওয়া লাইভ ওটিপি কোড একসাথে কপি করার ফাংশন
         function processSecretKeyAndCopy(secretKey) {
             try {
                 let cleanKey = secretKey.replace(/\s+/g, '').toUpperCase();
@@ -578,16 +551,16 @@
                 });
                 let liveCode = totp.generate();
                 
-                // সিক্রেট কী এবং ওটিপি কোড দুটোই একসাথে ক্লিপবোর্ডে কপি হবে
                 let resultString = `${cleanKey} | ${liveCode}`;
                 navigator.clipboard.writeText(resultString);
                 
                 alert(`✅ 2FA Key & Code Copied!\n\nKey: ${cleanKey}\nCode: ${liveCode}`);
             } catch (err) {
-                alert("⚠️ অকার্যকর বা ভুল সিক্রেট কী দেওয়া হয়েছে!");
+                alert("⚠️ ভুল বা অবৈধ সিক্রেট কী দেওয়া হয়েছে!");
             }
         }
 
+        // ৩. Cookies: কুকিজ কপি
         function extractCookies() {
             navigator.clipboard.readText().then(clipText => {
                 if (clipText.includes("c_user") || clipText.includes("xs")) {
@@ -599,6 +572,7 @@
             }).catch(() => alert("⚠️ No Cookies found!"));
         }
         
+        // ৪. Code: ওটিপি কোড কপি
         function getVerificationCode() {
             navigator.clipboard.readText().then(text => {
                 let match = text ? text.match(/\b\d{5,6}\b/) : null;
@@ -611,6 +585,7 @@
             }).catch(() => alert("⚠️ Code not found!"));
         }
 
+        // ৫. Clear Data: অ্যাপ ডাটা রিসেট
         function clearAppData() {
             if (confirm("Clear app data?")) {
                 localStorage.clear();
@@ -620,4 +595,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
