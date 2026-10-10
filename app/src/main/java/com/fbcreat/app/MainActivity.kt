@@ -24,6 +24,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -209,9 +210,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ২. টু-ফ্যাক্টর টুল: স্পেসযুক্ত কী রিমোভ করে অটো ডিটেক্ট ও কোড জেনারেট ---
+    // --- ২. টু-ফ্যাক্টর টুল: শতভাগ নির্ভুল 2FA ডিকোড ও কোড জেনারেটর ---
     private fun extractAndGen2FA() {
-        // পেজের টেক্সট থেকে সমস্ত স্পেস এবং হাইফেন রিমোভ করে বেস থ্রিটি (Base32) কী স্ক্যান করা
         webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var clean = text.replace(/[\\s\\-\\_]+/g, '').toUpperCase(); var match = clean.match(/[A-Z2-7]{16,32}/); return match ? match[0] : ''; })();") { jsResult ->
             var secretKey = jsResult?.replace("\"", "")?.trim() ?: ""
             
@@ -240,7 +240,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showManual2FADialog() {
         val input = EditText(this)
-        input.hint = "যেমন: PIB2X3MOOJDC5T6T"
+        input.hint = "যেমন: 2A4LJYJVEEJ2M7UH"
         input.setPadding(40, 40, 40, 40)
         AlertDialog.Builder(this)
             .setTitle("🔑 2FA Secret Key দিন")
@@ -262,7 +262,7 @@ class MainActivity : AppCompatActivity() {
         if (code != null) {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("2FA Code", code))
-            Toast.makeText(this, "✅ 2FA Code Copied: $code", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "✅ সঠিক 2FA Code Copied: $code", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(this, "⚠️ ভুল বা অবৈধ সিক্রেট কী!", Toast.LENGTH_SHORT).show()
         }
@@ -297,21 +297,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun base32Decode(base32: String): ByteArray? {
         val base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-        var buffer = 0
+        val cleanInput = base32.replace("=", "").toUpperCase()
+        var buffer = 0L
         var bitsLeft = 0
-        val output = mutableListOf<Byte>()
-        for (char in base32) {
-            if (char == '=') break
+        val bos = ByteArrayOutputStream()
+        
+        for (char in cleanInput) {
             val valIndex = base32Chars.indexOf(char)
             if (valIndex < 0) return null
-            buffer = (buffer shl 5) or valIndex
+            buffer = (buffer shl 5) or valIndex.toLong()
             bitsLeft += 5
             if (bitsLeft >= 8) {
                 bitsLeft -= 8
-                output.add(((buffer shr bitsLeft) and 0xFF).toByte())
+                bos.write(((buffer shr bitsLeft) and 0xFF).toInt())
             }
         }
-        return output.toByteArray()
+        return bos.toByteArray()
     }
 
     // --- ৩. কুকিজ টুল: চলমান সেশনের কুকিজ কপি করা ---
@@ -329,7 +330,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ৪. কোড টুল: ক্লিপবোর্ড, পেজ DOM এবং ডং ভ্যান মেইল API (Dong Van Mail API) কানেকশন ---
+    // --- ৪. কোড টুল: ক্লিপবোর্ড, পেজ DOM এবং ডং ভ্যান মেইল API কানেকশন ---
     private fun fetchMailVerificationCode() {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         
@@ -399,7 +400,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                             } else {
-                                runOnUiThread {
+                               runOnUiThread {
                                     Toast.makeText(this, "⚠️ Mail API Response Error!", Toast.LENGTH_SHORT).show()
                                 }
                             }
