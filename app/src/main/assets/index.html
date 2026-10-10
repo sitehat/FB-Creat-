@@ -18,7 +18,7 @@
             transform: translateX(-50%) !important;
             z-index: 9999999 !important;
         }
-        #fbWrapper {
+        #fbViewContainer {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -138,10 +138,16 @@
     </div>
 </div>
 
-<!-- IN-APP FACEBOOK CONTAINER -->
-<div id="fbWrapper" class="hidden">
-    <button onclick="closeFbView()" class="fixed top-3 right-3 bg-red-600 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg" style="z-index: 99999999 !important;">✕ Close FB</button>
-    <iframe id="fbIframe" src="about:blank" class="w-full h-full border-0 pt-12"></iframe>
+<!-- IN-APP FACEBOOK DIRECT CONTAINER (NO IFRAME ERROR) -->
+<div id="fbViewContainer" class="hidden flex flex-col">
+    <div class="w-full bg-gray-100 p-2 border-b flex justify-between items-center pt-3 px-4">
+        <span class="text-xs font-bold text-blue-600">Facebook Browser</span>
+        <button onclick="closeFbView()" class="bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow">✕ Close FB</button>
+    </div>
+    <div class="flex-grow w-full relative">
+        <!-- Direct Location Navigation Container -->
+        <div id="fbEmbedArea" class="w-full h-full"></div>
+    </div>
 </div>
 
 <!-- MODAL 1: MY PROFILE / ACTIVATION MODAL -->
@@ -375,15 +381,13 @@
             let data = snapshot.val() || {};
 
             if (data.status === true) {
-                // ১. প্লাস বাটন দৃশ্যমান করা
+                // ১. ফ্লোটিং বাটনটি চালু করা
                 const floatingTools = document.getElementById("floatingToggleContainer");
                 floatingTools.classList.remove("hidden");
                 floatingTools.style.display = "block";
 
-                // ২. ফেসবুক ভিউ দেখানো
-                const fbWrapper = document.getElementById("fbWrapper");
-                fbWrapper.classList.remove("hidden");
-                document.getElementById("fbIframe").src = "https://m.facebook.com";
+                // ২. সরাসরি ফেসবুক রিডাইরেক্ট করে পেজে লোড করা (iframe ছাড়াই)
+                window.location.href = "https://m.facebook.com";
             } else {
                 openProfileModal();
             }
@@ -391,9 +395,8 @@
     }
 
     function closeFbView() {
-        document.getElementById("fbWrapper").classList.add("hidden");
+        document.getElementById("fbViewContainer").classList.add("hidden");
         document.getElementById("floatingToggleContainer").classList.add("hidden");
-        document.getElementById("fbIframe").src = "about:blank";
     }
 
     function toggleFloatingTools() {
@@ -426,6 +429,13 @@
     function copyRegId() {
         navigator.clipboard.writeText(currentRegId);
         alert("✅ আপনার রেজিস্ট্রেশন আইডি কপি করা হয়েছে: " + currentRegId);
+    }
+
+    function calcGmailTotal() {
+        let select = document.getElementById("gmailCategory");
+        let price = parseFloat(select.value) || 0;
+        let qty = parseInt(document.getElementById("gmailQty").value) || 0;
+        document.getElementById("gmailTotalText").innerText = "৳ " + (price * qty).toFixed(2);
     }
 
     function calcProxyTotal() {
