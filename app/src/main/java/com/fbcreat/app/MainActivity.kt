@@ -44,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         webSettings.databaseEnabled = true
         webSettings.loadsImagesAutomatically = true
         webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        webSettings.setSupportMultipleWindows(true)
+        webSettings.javaScriptCanOpenWindowsAutomatically = true
         webSettings.userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
         val cookieManager = CookieManager.getInstance()
@@ -51,6 +53,16 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
+
+        // ১. অত্যন্ত গুরুত্বপূর্ণ: ফেসবুকের সিকিউরিটি চেক ও পপআপ হ্যান্ডেল করার জন্য WebChromeClient
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
+                val transport = resultMsg?.obj as? WebView.WebViewTransport
+                transport?.webView = view
+                resultMsg?.sendToTarget()
+                return true
+            }
+        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -67,7 +79,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 
-                if (url.contains("t.me/")) {
+                if (url.contains("t.me/") || url.contains("telegram.me")) {
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                         startActivity(intent)
@@ -75,12 +87,17 @@ class MainActivity : AppCompatActivity() {
                     } catch (e: Exception) {}
                 }
 
+                // POST রিকোয়েস্ট এবং ফেসবুকের সিকিউরিটি রিডাইরেক্ট স্মুথ রাখার জন্য false
                 return false
             }
 
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-                // ফেসবুক সিকিউরিটি এবং কনফার্মেশন পেজের SSL সার্টিফিকেট এরর বাইপাস করা
                 handler?.proceed()
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                CookieManager.getInstance().flush()
             }
         }
 
