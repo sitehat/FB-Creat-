@@ -3,9 +3,100 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- অ্যান্ড্রয়েড অ্যাপের মূল WebView (যা স্টোর ও ফেসবুক পেজ লোড করবে) -->
     <WebView
-        android:id="@+id/webview"
+        android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <!-- ফেসবুক পেজের ওপর ভাসমান টগল বাটন (+ / -) -->
+    <FrameLayout
+        android:id="@+id/nativeFloatingContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:visibility="gone"
+        android:elevation="10dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <!-- মূল প্লাস/মাইনাস বাটন -->
+            <Button
+                android:id="@+id/nativeToggleBtn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:drawable/ic_input_add"
+                android:backgroundTint="#2563EB"
+                android:elevation="8dp" />
+
+            <!-- ভাসমান শর্টকাট টুলস মেনু -->
+            <LinearLayout
+                android:id="@+id/nativeToolsMenu"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="#FAFAFA"
+                android:elevation="8dp"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btnProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="#EFF6FF"
+                    text="🔗 Profile"
+                    android:textColor="#1D4ED8"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btn2FA"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="#EEF2FF"
+                    text="🔑 2FA"
+                    android:textColor="#4338CA"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnCookies"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="#FEF3C7"
+                    text="🍪 Cookies"
+                    android:textColor="#B45309"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnCode"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="#ECFDF5"
+                    text="📥 Code"
+                    android:textColor="#047857"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnClearData"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:backgroundTint="#FEF2F2"
+                    text="🧹 Clear Data"
+                    android:textColor="#DC2626"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
 
 </RelativeLayout>
