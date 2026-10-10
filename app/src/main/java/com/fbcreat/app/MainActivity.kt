@@ -25,6 +25,7 @@ import java.net.URL
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.ByteArrayOutputStream
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -54,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         webSettings.javaScriptCanOpenWindowsAutomatically = true
         webSettings.userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
-        // --- ফেসবুক ব্রাউজিং ফাস্ট ও স্মুথ করার অপ্টিমাইজেশন সেটিংস ---
         webSettings.cacheMode = WebSettings.LOAD_DEFAULT
         webSettings.offscreenPreRaster = true
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
@@ -65,7 +65,6 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
-        // ফেসবুক সেটিংস ও পপআপ উইন্ডো ক্র্যাশ রোধ করার নিরাপদ WebChromeClient
         webView.webChromeClient = object : WebChromeClient() {
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean {
                 try {
@@ -152,7 +151,7 @@ class MainActivity : AppCompatActivity() {
             toggleMenu()
         }
         findViewById<Button>(R.id.btnCode).setOnClickListener {
-            fetchMailVerificationCode()
+            showMailCodeDialog()
             toggleMenu()
         }
         findViewById<Button>(R.id.btnClearData).setOnClickListener {
@@ -179,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ১. প্রোফাইল টুল: শুধুমাত্র ইউজার আইডি (সংখ্যা) কপি করা ---
+    // --- ১. প্রোফাইল আইডি কপি ---
     private fun extractProfileId() {
         val cookieManager = CookieManager.getInstance()
         val cookies = cookieManager.getCookie("https://m.facebook.com") ?: cookieManager.getCookie("https://facebook.com") ?: ""
@@ -210,7 +209,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ২. টু-ফ্যাক্টর টুল: শতভাগ নির্ভুল 2FA ডিকোড ও কোড জেনারেটর ---
+    // --- ২. টু-ফ্যাক্টর টুল: পেজ থেকে সিক্রেট কি ডিটেক্ট করে কোড জেনারেট ও কপি ---
     private fun extractAndGen2FA() {
         webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var clean = text.replace(/[\\s\\-\\_]+/g, '').toUpperCase(); var match = clean.match(/[A-Z2-7]{16,32}/); return match ? match[0] : ''; })();") { jsResult ->
             var secretKey = jsResult?.replace("\"", "")?.trim() ?: ""
@@ -229,7 +228,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (secretKey.isNotEmpty() && secretKey != "null") {
-                process2FA(secretKey)
+                processSingle2FA(secretKey)
             } else {
                 runOnUiThread {
                     showManual2FADialog()
@@ -240,7 +239,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showManual2FADialog() {
         val input = EditText(this)
-        input.hint = "যেমন: 2A4LJYJVEEJ2M7UH"
+        input.hint = "যেমন: GSJSOAJAVJHASGHS"
         input.setPadding(40, 40, 40, 40)
         AlertDialog.Builder(this)
             .setTitle("🔑 2FA Secret Key দিন")
@@ -248,7 +247,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("জেনারেট করুন") { _, _ ->
                 val manualKey = input.text.toString().replace("\\s+".toRegex(), "").toUpperCase()
                 if (manualKey.isNotEmpty()) {
-                    process2FA(manualKey)
+                    processSingle2FA(manualKey)
                 } else {
                     Toast.makeText(this, "⚠️ সিক্রেট কী খালি রাখা যাবে না!", Toast.LENGTH_SHORT).show()
                 }
@@ -257,14 +256,14 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun process2FA(secretKey: String) {
+    private fun processSingle2FA(secretKey: String) {
         val code = generateTOTP(secretKey)
         if (code != null) {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("2FA Code", code))
-            Toast.makeText(this, "✅ সঠিক 2FA Code Copied: $code", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "✅ 2FA Code Copied: $code", Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(this, "⚠️ ভুল বা অবৈধ সিক্রেট কী!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "⚠️ অবৈধ সিক্রেট কী!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -315,7 +314,7 @@ class MainActivity : AppCompatActivity() {
         return bos.toByteArray()
     }
 
-    // --- ৩. কুকিজ টুল: চলমান সেশনের কুকিজ কপি করা ---
+    // --- ৩. কুকিজ কপি ---
     private fun extractCookies() {
         val url = webView.url ?: "https://m.facebook.com"
         val cookieManager = CookieManager.getInstance()
@@ -330,94 +329,102 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- ৪. কোড টুল: ক্লিপবোর্ড, পেজ DOM এবং ডং ভ্যান মেইল API কানেকশন ---
-    private fun fetchMailVerificationCode() {
-        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+    // --- ৪. কোড টুল: ডং ভ্যান মেইল পপআপ ডায়ালগ ---
+    private fun showMailCodeDialog() {
+        val input = EditText(this)
+        input.hint = "email|password|refresh_token|client_id"
+        input.setPadding(40, 40, 40, 40)
         
-        // ১. প্রথমে ক্লিপবোর্ড চেক করা
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = clipboard.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
-            val text = clipData.getItemAt(0).text?.toString() ?: ""
-            val match = "\\b\\d{5,6}\\b".toRegex().find(text)
-            if (match != null && text.length < 50) {
-                val code = match.value
-                clipboard.setPrimaryClip(ClipData.newPlainText("Verification Code", code))
-                Toast.makeText(this, "✅ Code Copied from Clipboard: $code", Toast.LENGTH_SHORT).show()
-                return
+            val clipText = clipData.getItemAt(0).text?.toString() ?: ""
+            if (clipText.contains("|") || clipText.contains("@")) {
+                input.setText(clipText)
             }
         }
 
-        // ২. পেজ থেকে কোড চেক করা
-        webView.evaluateJavascript("(function() { var text = document.body.innerText || ''; var m = text.match(/\\b\\d{5,6}\\b/); return m ? m[0] : ''; })();") { pageCode ->
-            val codeOnPage = pageCode?.replace("\"", "")?.trim() ?: ""
-            if (codeOnPage.isNotEmpty() && codeOnPage != "null") {
-                clipboard.setPrimaryClip(ClipData.newPlainText("Verification Code", codeOnPage))
-                Toast.makeText(this, "✅ Code Found on Page: $codeOnPage", Toast.LENGTH_LONG).show()
-                return@evaluateJavascript
-            }
-
-            // ৩. ডং ভ্যান মেইল API থেকে ফেচ করা
-            Toast.makeText(this, "Checking Mail API...", Toast.LENGTH_SHORT).show()
-
-            webView.evaluateJavascript("JSON.stringify({email: localStorage.getItem('fb_email') || localStorage.getItem('email') || '', refresh_token: localStorage.getItem('fb_refresh_token') || localStorage.getItem('refresh_token') || ''});") { jsonResult ->
-                try {
-                    Thread {
-                        try {
-                            val apiUrl = URL("https://tools.dongvanfb.net/api/graph_code")
-                            val conn = apiUrl.openConnection() as HttpURLConnection
-                            conn.requestMethod = "POST"
-                            conn.setRequestProperty("Content-Type", "application/json; utf-8")
-                            conn.doOutput = true
-
-                            val postData = jsonResult?.replace("\\", "") ?: "{\"email\":\"\"}"
-                            val os = conn.outputStream
-                            os.write(postData.toByteArray(Charsets.UTF_8))
-                            os.flush()
-                            os.close()
-
-                            if (conn.responseCode == 200) {
-                                val br = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
-                                val response = StringBuilder()
-                                var line: String?
-                                while (br.readLine().also { line = it } != null) {
-                                    response.append(line?.trim())
-                                }
-                                br.close()
-
-                                val resStr = response.toString()
-                                val codeMatch = "\"code\"\\s*:\\s*\"([0-9]{5,6})\"".toRegex().find(resStr)
-                                    ?: "\"code\"\\s*:\\s*([0-9]{5,6})".toRegex().find(resStr)
-
-                                if (codeMatch != null) {
-                                    val code = codeMatch.groupValues[1]
-                                    runOnUiThread {
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("Mail Code", code))
-                                        Toast.makeText(this, "✅ Mail Code Copied: $code", Toast.LENGTH_LONG).show()
-                                    }
-                                } else {
-                                    runOnUiThread {
-                                        Toast.makeText(this, "⚠️ মেইলে নতুন কোনো কোড আসেনি!", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            } else {
-                               runOnUiThread {
-                                    Toast.makeText(this, "⚠️ Mail API Response Error!", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } catch (e: Exception) {
-                            runOnUiThread {
-                                Toast.makeText(this, "⚠️ Mail API Connection Failed!", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }.start()
-                } catch (e: Exception) {
-                    Toast.makeText(this, "⚠️ Mail Read Error!", Toast.LENGTH_SHORT).show()
+        AlertDialog.Builder(this)
+            .setTitle("📥 DongVan Mail Details")
+            .setView(input)
+            .setPositiveButton("Get Code") { _, _ ->
+                val mailData = input.text.toString().trim()
+                if (mailData.isNotEmpty()) {
+                    fetchCodeFromDongVanApi(mailData)
+                } else {
+                    Toast.makeText(this, "⚠️ মেইল ডিটেইলস খালি রাখা যাবে না!", Toast.LENGTH_SHORT).show()
                 }
             }
-        }
+            .setNegativeButton("বাতিল", null)
+            .show()
     }
 
-    // --- ৫. ক্লিয়ার ডাটা টুল: রেজিস্ট্রেশন আইডি সুরক্ষিত রেখে শুধুমাত্র ফেসবুক ক্যাশ ক্লিয়ার করা ---
+    private fun fetchCodeFromDongVanApi(mailData: String) {
+        Toast.makeText(this, "Checking Mail...", Toast.LENGTH_SHORT).show()
+        
+        val parts = mailData.split("|")
+        val email = parts.getOrNull(0)?.trim() ?: ""
+        val refreshToken = parts.getOrNull(2)?.trim() ?: ""
+        val clientId = parts.getOrNull(3)?.trim() ?: ""
+
+        Thread {
+            try {
+                val apiUrl = URL("https://tools.dongvanfb.net/api/graph_code")
+                val conn = apiUrl.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                conn.doOutput = true
+
+                val jsonObject = JSONObject()
+                jsonObject.put("email", email)
+                if (refreshToken.isNotEmpty()) jsonObject.put("refresh_token", refreshToken)
+                if (clientId.isNotEmpty()) jsonObject.put("client_id", clientId)
+
+                val os = conn.outputStream
+                os.write(jsonObject.toString().toByteArray(Charsets.UTF_8))
+                os.flush()
+                os.close()
+
+                if (conn.responseCode == 200) {
+                    val br = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
+                    val response = StringBuilder()
+                    var line: String?
+                    while (br.readLine().also { line = it } != null) {
+                        response.append(line?.trim())
+                    }
+                    br.close()
+
+                    val resStr = response.toString()
+                    val codeMatch = "\"code\"\\s*:\\s*\"([0-9]{5,6})\"".toRegex().find(resStr)
+                        ?: "\"code\"\\s*:\\s*([0-9]{5,6})".toRegex().find(resStr)
+                        ?: "\\b[0-9]{5,6}\\b".toRegex().find(resStr)
+
+                    if (codeMatch != null) {
+                        val code = codeMatch.groupValues.let { if (it.size > 1) it[1] else it[0] }
+                        runOnUiThread {
+                            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Mail Code", code))
+                            Toast.makeText(this, "✅ Mail Code Copied: $code", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        runOnUiThread {
+                            Toast.makeText(this, "⚠️ মেইলে নতুন কোনো কোড পাওয়া যায়নি!", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, "⚠️ Server Error (${conn.responseCode})", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "⚠️ API Connection Failed!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    // --- ৫. ক্লিয়ার ডাটা ---
     private fun clearFacebookDataOnly() {
         AlertDialog.Builder(this)
             .setTitle("Clear Facebook Cache")
