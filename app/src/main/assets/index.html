@@ -9,114 +9,129 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <!-- OTP/TOTP Library for 2FA Code Generation -->
+    <!-- OTP/TOTP Library for 2FA -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.4/otpauth.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen relative">
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen relative overflow-x-hidden">
 
-    <!-- Top Header -->
-    <div class="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-40">
-        <h1 class="text-xl font-bold text-blue-600">FC <span class="text-blue-900">B</span></h1>
-        <div class="space-x-2 flex items-center">
-            <span class="text-blue-600 font-semibold cursor-pointer text-sm">Home</span>
-            <span onclick="openTelegramSupport()" class="text-gray-500 cursor-pointer text-sm">Support</span>
-            <button onclick="openProfileModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow">My profile</button>
-        </div>
-    </div>
-
-    <!-- Main Store Area -->
-    <div class="p-4 max-w-md mx-auto w-full flex-grow pt-4">
-        
-        <!-- FLOATING TOGGLE BUTTON (+ / -) AT TOP CENTER (Hidden by default) -->
-        <div id="floatingToggleContainer" class="flex justify-center mb-4 hidden">
-            <div class="relative">
-                <button id="toggleToolsBtn" onclick="toggleFloatingTools()" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center font-bold text-xl transition-all duration-200">
-                    +
+    <!-- FLOATING TOGGLE BUTTON (+ / -) (Hidden by default, appears ONLY when Facebook is opened) -->
+    <div id="floatingToggleContainer" class="fixed top-3 left-1/2 transform -translate-x-1/2 z-50 hidden">
+        <div class="relative flex flex-col items-center">
+            <button id="toggleToolsBtn" onclick="toggleFloatingTools()" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-full shadow-2xl flex items-center justify-center font-bold text-2xl border-2 border-white transition-all duration-200">
+                +
+            </button>
+            <div id="floatingToolsMenu" class="absolute top-12 bg-white/95 backdrop-blur-md w-44 rounded-2xl p-2 shadow-2xl border border-gray-200 hidden space-y-1.5 z-50">
+                <button onclick="autoExtractProfileId()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
+                    <span>🔗 Profile</span><span>›</span>
                 </button>
-                <div id="floatingToolsMenu" class="absolute top-12 left-1/2 transform -translate-x-1/2 bg-white w-64 rounded-2xl p-3 shadow-2xl border border-gray-200 hidden space-y-2 mt-1 z-50">
-                    <div class="text-xs font-bold text-blue-600 border-b pb-1 mb-1 text-center">Auto Utility Toolset</div>
-                    <button onclick="autoExtractProfileId()" class="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-3 rounded-xl text-xs font-medium text-left flex justify-between items-center">
-                        <span>🔗 প্রোফাইল আইডি অটো-এক্সট্রাক্ট</span><span>›</span>
-                    </button>
-                    <button onclick="autoExtractAndGen2FA()" class="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-3 rounded-xl text-xs font-medium text-left flex justify-between items-center">
-                        <span>🔑 2FA কী ও অটো-কোড জেনারেট</span><span>›</span>
-                    </button>
-                    <button onclick="extractCookies()" class="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-3 rounded-xl text-xs font-medium text-left flex justify-between items-center">
-                        <span>🍪 কুকিজ হ্যান্ডলিং / কপি</span><span>›</span>
-                    </button>
-                    <button onclick="getVerificationCode()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-2 px-3 rounded-xl text-xs font-medium text-left flex justify-between items-center">
-                        <span>📥 ৫/৬ সংখ্যার কোড ডিটেক্ট</span><span>›</span>
-                    </button>
-                    <button onclick="clearAppData()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 px-3 rounded-xl text-xs font-medium text-left flex justify-between items-center">
-                        <span>🧹 অ্যাপ ডাটা ক্লিয়ার</span><span>›</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow-sm mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">FC<span class="text-blue-600">B</span> Store</h2>
-            <p class="text-xs text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
-
-            <!-- 1st Item: New Fb Account -->
-            <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition relative">
-                <div class="flex items-center space-x-3">
-                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">1</span>
-                    <span class="font-semibold text-gray-700 text-sm">New Fb Account</span>
-                </div>
-                <div class="flex items-center space-x-1.5">
-                    <span id="lockStatusText" class="text-xs font-medium">যাচাই হচ্ছে...</span>
-                    <span id="lockIcon" class="text-base">🔒</span>
-                </div>
-            </div>
-
-            <!-- 2nd Item -->
-            <div onclick="openGmailModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
-                <div class="flex items-center space-x-3">
-                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">2</span>
-                    <span class="font-semibold text-gray-700 text-sm">Buy gmail outlook</span>
-                </div>
-                <span class="text-gray-400 font-bold">›</span>
-            </div>
-
-            <!-- 3rd Item -->
-            <div onclick="openProxyModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
-                <div class="flex items-center space-x-3">
-                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">3</span>
-                    <span class="font-semibold text-gray-700 text-sm">Buy proxy</span>
-                </div>
-                <span class="text-gray-400 font-bold">›</span>
-            </div>
-
-            <!-- 4th Item -->
-            <div onclick="openVpnModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
-                <div class="flex items-center space-x-3">
-                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">4</span>
-                    <span class="font-semibold text-gray-700 text-sm">Buy vpn</span>
-                </div>
-                <span class="text-gray-400 font-bold">›</span>
-            </div>
-        </div>
-
-        <!-- Warning Notice -->
-        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-900 mb-4 shadow-sm leading-relaxed">
-            ⚠️ টেলিগ্রাম লিংক থেকে মাসে অন্তত একবার অ্যাপস এর আপডেট ভার্সন সংগ্রহ করুন, পুরাতন ভার্সন ডিলিট করুন।
-            <br><span class="text-red-600 font-semibold mt-1 block">টেকনিক্যাল সমস্যার কারণে স্টক সীমিত দেখাচ্ছে, আপনারা নির্দ্বিধায় অর্ডার করুন।</span>
-        </div>
-
-        <!-- Support Box -->
-        <div onclick="openTelegramSupport()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center space-x-3 border border-gray-100 mb-4 cursor-pointer hover:bg-gray-50 transition">
-            <div class="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg">🎧</div>
-            <div>
-                <h4 class="font-bold text-gray-800 text-sm">Support</h4>
-                <p class="text-xs text-gray-500">Powered by Hasan</p>
+                <button onclick="autoExtractAndGen2FA()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
+                    <span>🔑 2FA</span><span>›</span>
+                </button>
+                <button onclick="extractCookies()" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
+                    <span>🍪 Cookies</span><span>›</span>
+                </button>
+                <button onclick="getVerificationCode()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
+                    <span>📥 Code</span><span>›</span>
+                </button>
+                <button onclick="clearAppData()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-1.5 px-3 rounded-xl text-xs font-semibold text-left flex justify-between items-center">
+                    <span>🧹 Clear Data</span><span>›</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="bg-gray-900 text-gray-300 text-center py-3 text-xs font-medium">
-        Powered by Hasan
+    <!-- MAIN APP VIEW -->
+    <div id="mainAppView" class="flex flex-col min-h-screen">
+        <!-- Top Header -->
+        <div class="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-40">
+            <h1 class="text-xl font-bold text-blue-600">FC <span class="text-blue-900">B</span></h1>
+            <div class="space-x-2 flex items-center">
+                <span class="text-blue-600 font-semibold cursor-pointer text-sm">Home</span>
+                <span onclick="openTelegramSupport()" class="text-gray-500 cursor-pointer text-sm">Support</span>
+                <button onclick="openProfileModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow">My profile</button>
+            </div>
+        </div>
+
+        <!-- Main Store Area -->
+        <div class="p-4 max-w-md mx-auto w-full flex-grow">
+            <div class="bg-white p-5 rounded-2xl shadow-sm mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">FC<span class="text-blue-600">B</span> Store</h2>
+                <p class="text-xs text-gray-500 mb-4">Your Smart Solution for Social Media and Email</p>
+
+                <!-- 1st Item: New Fb Account -->
+                <div id="fbAccountBtn" onclick="handleFirstIconClick()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition relative">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                        <span class="font-semibold text-gray-700 text-sm">New Fb Account</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        <span id="lockStatusText" class="text-xs font-medium">যাচাই হচ্ছে...</span>
+                        <span id="lockIcon" class="text-base">🔒</span>
+                    </div>
+                </div>
+
+                <!-- 2nd Item -->
+                <div onclick="openGmailModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                        <span class="font-semibold text-gray-700 text-sm">Buy gmail outlook</span>
+                    </div>
+                    <span class="text-gray-400 font-bold">›</span>
+                </div>
+
+                <!-- 3rd Item -->
+                <div onclick="openProxyModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-3 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                        <span class="font-semibold text-gray-700 text-sm">Buy proxy</span>
+                    </div>
+                    <span class="text-gray-400 font-bold">›</span>
+                </div>
+
+                <!-- 4th Item -->
+                <div onclick="openVpnModal()" class="bg-gray-50 p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between border border-gray-100 cursor-pointer hover:bg-gray-100 transition">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">4</span>
+                        <span class="font-semibold text-gray-700 text-sm">Buy vpn</span>
+                    </div>
+                    <span class="text-gray-400 font-bold">›</span>
+                </div>
+            </div>
+
+            <!-- Warning Notice -->
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-900 mb-4 shadow-sm leading-relaxed">
+                ⚠️ টেলিগ্রাম লিংক থেকে মাসে অন্তত একবার অ্যাপস এর আপডেট ভার্সন সংগ্রহ করুন, পুরাতন ভার্সন ডিলিট করুন।
+                <br><span class="text-red-600 font-semibold mt-1 block">টেকনিক্যাল সমস্যার কারণে স্টক সীমিত দেখাচ্ছে, আপনারা নির্দ্বিধায় অর্ডার করুন।</span>
+            </div>
+
+            <!-- Support Box -->
+            <div onclick="openTelegramSupport()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center space-x-3 border border-gray-100 mb-4 cursor-pointer hover:bg-gray-50 transition">
+                <div class="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg">🎧</div>
+                <div>
+                    <h4 class="font-bold text-gray-800 text-sm">Support</h4>
+                    <p class="text-xs text-gray-500">Powered by Hasan</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-900 text-gray-300 text-center py-3 text-xs font-medium">
+            Powered by Hasan
+        </div>
+    </div>
+
+    <!-- IN-APP FACEBOOK BROWSER VIEW (Hidden by default) -->
+    <div id="facebookBrowserView" class="fixed inset-0 bg-white z-30 hidden flex flex-col h-full w-full">
+        <!-- Top Control Bar for In-App Browser -->
+        <div class="bg-gray-900 text-white p-2.5 flex justify-between items-center shadow-md z-40">
+            <button onclick="closeFacebookBrowser()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
+                <span>✕</span> <span>Close FB</span>
+            </button>
+            <span class="text-xs font-mono text-gray-300">m.facebook.com</span>
+            <button onclick="reloadFbFrame()" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-2.5 py-1.5 rounded-lg">🔄</button>
+        </div>
+        <!-- Embedded Mobile Facebook Frame -->
+        <iframe id="fbIframe" src="about:blank" class="w-full flex-grow border-none"></iframe>
     </div>
 
     <!-- MODAL 1: MY PROFILE / ACTIVATION MODAL -->
@@ -260,7 +275,7 @@
                         <option value="100" data-name="HMA VPN (30 Days)">HMA VPN (30 Days) — ৳100.00</option>
                         <option value="20" data-name="Surfshark VPN (7 Days)">Surfshark VPN (7 Days) — ৳20.00</option>
                         <option value="25" data-name="ExpressVPN (7 Days)">ExpressVPN (7 Days) — ৳25.00</option>
-                        <option value="30" data-name="Bitdefender VPN (7 Days)">Bitdefender VPN (7 Days)">Bitdefender VPN (7 Days) — ৳30.00</option>
+                        <option value="30" data-name="Bitdefender VPN (7 Days)">Bitdefender VPN (7 Days) — ৳30.00</option>
                         <option value="20" data-name="PIA VPN (7 Days)">PIA VPN (7 Days) — ৳20.00</option>
                         <option value="30" data-name="Turbo VPN (7 Days)">Turbo VPN (7 Days) — ৳30.00</option>
                         <option value="25" data-name="CyberGhost VPN">CyberGhost VPN — ৳25.00</option>
@@ -328,7 +343,6 @@
             calcVpnTotal();
         });
 
-        // ফায়ারবেজ থেকে স্ট্যাটাস চেক এবং ব্যাকগ্রাউন্ড আপডেট লজিক
         function checkFirebaseStatus() {
             db.ref(currentRegId).once('value').then((snapshot) => {
                 let data = snapshot.val() || {};
@@ -359,33 +373,33 @@
             });
         }
 
-        // ১ নম্বর আইকনে ক্লিক করার পর সঠিক শর্ত অনুযায়ী ওপেন হওয়া
         function handleFirstIconClick() {
-            // ক্লিকের মুহূর্তে একবার রিয়েল-টাইম ভেরিফাই করে নেওয়া হবে
             db.ref(currentRegId).once('value').then((snapshot) => {
                 let data = snapshot.val() || {};
                 isAccountActive = (data.status === true);
 
-                let toggleContainer = document.getElementById("floatingToggleContainer");
-
                 if (isAccountActive) {
-                    // অ্যাকাউন্ট সক্রিয় থাকলে প্লাস (+) বাটন ভেসে উঠবে এবং ফেসবুক ওপেন হবে
-                    toggleContainer.classList.remove("hidden");
-                    
-                    if (window.AndroidBridge && typeof window.AndroidBridge.openFbLite === "function") {
-                        window.AndroidBridge.openFbLite();
-                    } else {
-                        window.location.href = "https://m.facebook.com";
-                    }
+                    document.getElementById("facebookBrowserView").classList.remove("hidden");
+                    document.getElementById("fbIframe").src = "https://m.facebook.com";
+                    document.getElementById("floatingToggleContainer").classList.remove("hidden");
                 } else {
-                    // অ্যাকাউন্ট নিষ্ক্রিয় থাকলে প্লাস বাটন লুকিয়ে থাকবে এবং প্রোফাইল পপআপ আসবে
-                    toggleContainer.classList.add("hidden");
                     openProfileModal();
                 }
             }).catch((e) => {
-                // নেটওয়ার্ক সমস্যা বা ফায়ারবেজ ফেইলিওর হলে সেফটি হিসেবে প্রোফাইল পপআপ দেখাবে
                 openProfileModal();
             });
+        }
+
+        function closeFacebookBrowser() {
+            document.getElementById("facebookBrowserView").classList.add("hidden");
+            document.getElementById("floatingToggleContainer").classList.add("hidden");
+            document.getElementById("floatingToolsMenu").classList.add("hidden");
+            document.getElementById("fbIframe").src = "about:blank";
+        }
+
+        function reloadFbFrame() {
+            let iframe = document.getElementById("fbIframe");
+            iframe.src = iframe.src;
         }
 
         function toggleFloatingTools() {
@@ -493,117 +507,117 @@
             openTelegramSupport();
         }
 
-        // =========================================================================
-        // অটোমেটিক ব্যাকগ্রাউন্ড ডেটা এক্সট্রাকশন ও প্রসেসিং টুলস (Auto-Extraction Logic)
-        // =========================================================================
+        // ==========================================
+        // SHORTCUT UTILITY TOOLS (UPDATED 2FA LOGIC)
+        // ==========================================
 
         function autoExtractProfileId() {
-            let pageUrl = window.location.href;
-            let pageText = document.body.innerText;
-            let match = pageUrl.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/) || pageText.match(/(?:profile\.php\?id=|user\/|id=)([0-9]{5,})/);
+            let iframe = document.getElementById("fbIframe");
+            let targetUrl = iframe.src || window.location.href;
             
+            let match = targetUrl.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/);
             if (match && match[1]) {
-                let profileId = match[1];
-                navigator.clipboard.writeText(profileId);
-                alert("✅ প্রোফাইল আইডি অটোমেটিক কপি করা হয়েছে: " + profileId);
+                navigator.clipboard.writeText(match[1]);
+                alert("✅ Profile ID Copied: " + match[1]);
             } else {
-                navigator.clipboard.readText().then(clipText => {
-                    let clipMatch = clipText.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/);
+                navigator.clipboard.readText().then(text => {
+                    let clipMatch = text.match(/(?:id=|profile\.php\?id=|\/)([0-9]{5,})/);
                     if (clipMatch) {
                         navigator.clipboard.writeText(clipMatch[1]);
-                        alert("✅ ক্লিপবোর্ড থেকে প্রোফাইল আইডি কপি করা হয়েছে: " + clipMatch[1]);
+                        alert("✅ Profile ID Copied: " + clipMatch[1]);
                     } else {
-                        alert("⚠️ বর্তমান পেজ বা ক্লিপবোর্ডে কোনো ফেসবুক আইডি পাওয়া যায়নি।");
+                        alert("⚠️ Profile ID not found!");
                     }
-                }).catch(err => {
-                    alert("⚠️ প্রোফাইল আইডি অটো-ডিটেক্ট করা যায়নি।");
+                }).catch(() => alert("⚠️ Profile ID not found!"));
+            }
+        }
+
+        // ২. 2FA: পেজ/ক্লিপবোর্ড থেকে সিক্রেট কী কপি করবে এবং সাথে সাথে তার ৬ ডিজিটের কোড তৈরি করে একসাথে কপি করবে
+        function autoExtractAndGen2FA() {
+            let iframe = document.getElementById("fbIframe");
+            let pageText = "";
+            try {
+                pageText = iframe.contentWindow.document.body.innerText || "";
+            } catch(e) {}
+
+            // পেজের টেক্সট বা ক্লিপবোর্ড থেকে 2FA সিক্রেট কী খোঁজা (১৬ থেকে ৩২ ক্যারেক্টারের Base32 ফরম্যাট)
+            let keyMatch = pageText.match(/\b[A-Z2-7]{16,32}\b/i);
+
+            if (keyMatch) {
+                processSecretKeyAndCopy(keyMatch[0]);
+            } else {
+                // পেজে না পেলে ক্লিপবোর্ড থেকে রিড করবে
+                navigator.clipboard.readText().then(clipText => {
+                    let cleanKey = clipText.replace(/\s+/g, '').toUpperCase();
+                    let clipMatch = cleanKey.match(/[A-Z2-7]{16,32}/);
+                    if (clipMatch) {
+                        processSecretKeyAndCopy(clipMatch[0]);
+                    } else {
+                        let manualKey = prompt("🔑 সিক্রেট কী পাওয়া যায়নি। সিক্রেট কী দিন:");
+                        if (manualKey) {
+                            processSecretKeyAndCopy(manualKey);
+                        }
+                    }
+                }).catch(() => {
+                    let manualKey = prompt("🔑 সিক্রেট কী দিন:");
+                    if (manualKey) {
+                        processSecretKeyAndCopy(manualKey);
+                    }
                 });
             }
         }
 
-        function autoExtractAndGen2FA() {
-            navigator.clipboard.readText().then(clipText => {
-                let cleanKey = clipText.replace(/\s+/g, '').toUpperCase();
-                if (cleanKey.length >= 16 && /^[A-Z2-7]+=*$/.test(cleanKey)) {
-                    let totp = new OTPAuth.TOTP({ secret: cleanKey, digits: 6, period: 30 });
-                    let code = totp.generate();
-                    navigator.clipboard.writeText(code);
-                    alert("✅ 2FA সিক্রেট কী পাওয়া গেছে!\nটোকেন কোড (কপি করা হয়েছে): " + code);
-                } else {
-                    let manualKey = prompt("🔑 ক্লিপবোর্ডে সঠিক 2FA কী পাওয়া যায়নি। এখানে সিক্রেট কী দিন:");
-                    if (manualKey) {
-                        let mClean = manualKey.replace(/\s+/g, '').toUpperCase();
-                        let totp = new OTPAuth.TOTP({ secret: mClean, digits: 6, period: 30 });
-                        let code = totp.generate();
-                        navigator.clipboard.writeText(code);
-                        alert("✅ টু-ফ্যাক্টর কোড (OTP): " + code + "\n(ক্লিপবোর্ডে কপি করা হয়েছে)");
-                    }
-                }
-            }).catch(err => {
-                let manualKey = prompt("🔑 2FA সিক্রেট কী (Secret Key) দিন:");
-                if (manualKey) {
-                    let mClean = manualKey.replace(/\s+/g, '').toUpperCase();
-                    let totp = new OTPAuth.TOTP({ secret: mClean, digits: 6, period: 30 });
-                    let code = totp.generate();
-                    navigator.clipboard.writeText(code);
-                    alert("✅ টু-ফ্যাক্টর কোড (OTP): " + code + "\n(ক্লিপবোর্ডে কপি করা হয়েছে)");
-                }
-            });
+        // সিক্রেট কী এবং জেনারেট হওয়া লাইভ ওটিপি কোড একসাথে কপি করার ফাংশন
+        function processSecretKeyAndCopy(secretKey) {
+            try {
+                let cleanKey = secretKey.replace(/\s+/g, '').toUpperCase();
+                let totp = new OTPAuth.TOTP({
+                    secret: cleanKey,
+                    digits: 6,
+                    period: 30
+                });
+                let liveCode = totp.generate();
+                
+                // সিক্রেট কী এবং ওটিপি কোড দুটোই একসাথে ক্লিপবোর্ডে কপি হবে
+                let resultString = `${cleanKey} | ${liveCode}`;
+                navigator.clipboard.writeText(resultString);
+                
+                alert(`✅ 2FA Key & Code Copied!\n\nKey: ${cleanKey}\nCode: ${liveCode}`);
+            } catch (err) {
+                alert("⚠️ অকার্যকর বা ভুল সিক্রেট কী দেওয়া হয়েছে!");
+            }
         }
 
         function extractCookies() {
-            try {
-                let currentCookies = document.cookie;
-                if (currentCookies) {
-                    navigator.clipboard.writeText(currentCookies);
-                    alert("✅ বর্তমান কুকিজ সফলভাবে কপি করা হয়েছে!");
+            navigator.clipboard.readText().then(clipText => {
+                if (clipText.includes("c_user") || clipText.includes("xs")) {
+                    navigator.clipboard.writeText(clipText);
+                    alert("✅ Cookies Copied!");
                 } else {
-                    navigator.clipboard.readText().then(clipText => {
-                        if (clipText.includes("c_user") || clipText.includes("xs")) {
-                            navigator.clipboard.writeText(clipText);
-                            alert("✅ ক্লিপবোর্ড থেকে ফেসবুক কুকিজ কপি করা হয়েছে!");
-                        } else {
-                            alert("⚠️ কোনো কুকিজ পাওয়া যায়নি।");
-                        }
-                    });
+                    alert("⚠️ No Cookies found!");
                 }
-            } catch (err) {
-                alert("⚠️ কুকিজ রিড করা সম্ভব হয়নি।");
-            }
+            }).catch(() => alert("⚠️ No Cookies found!"));
         }
         
         function getVerificationCode() {
             navigator.clipboard.readText().then(text => {
-                if (text) {
-                    let match = text.match(/\b\d{5,6}\b/);
-                    if (match) {
-                        navigator.clipboard.writeText(match[0]);
-                        alert("✅ ভেরিফিকেশন কোড অটো-কপি করা হয়েছে: " + match[0]);
-                    } else {
-                        alert("⚠️ ক্লিপবোর্ডের টেক্সটে কোনো ৫ বা ৬ সংখ্যার কোড পাওয়া যায়নি।");
-                    }
+                let match = text ? text.match(/\b\d{5,6}\b/) : null;
+                if (match) {
+                    navigator.clipboard.writeText(match[0]);
+                    alert("✅ Code Copied: " + match[0]);
+                } else {
+                    alert("⚠️ Code not found!");
                 }
-            }).catch(err => {
-                let text = prompt("📥 ইনবক্সের মেসেজ বা জিমেইল টেক্সট পেস্ট করুন:");
-                if (text) {
-                    let match = text.match(/\b\d{5,6}\b/);
-                    if (match) {
-                        navigator.clipboard.writeText(match[0]);
-                        alert("✅ ভেরিফিকেশন কোড: " + match[0]);
-                    } else {
-                        alert("⚠️ কোড পাওয়া যায়নি।");
-                    }
-                }
-            });
+            }).catch(() => alert("⚠️ Code not found!"));
         }
 
         function clearAppData() {
-            if (confirm("⚠️ আপনি কি সত্যিই অ্যাপ ডাটা এবং লোকাল স্টোরেজ ক্লিয়ার করতে চান?")) {
+            if (confirm("Clear app data?")) {
                 localStorage.clear();
-                alert("🧹 অ্যাপ ডাটা সফলভাবে ক্লিয়ার করা হয়েছে!");
+                alert("🧹 Data Cleared!");
                 location.reload();
             }
         }
     </script>
 </body>
-</html>
+    </html>
