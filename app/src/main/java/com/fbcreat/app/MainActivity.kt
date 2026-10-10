@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Bundle
 import android.view.View
 import android.webkit.*
@@ -74,8 +75,12 @@ class MainActivity : AppCompatActivity() {
                     } catch (e: Exception) {}
                 }
 
-                // লগইন ফর্ম সাবমিশন ও অন্যান্য পেজ স্মুথলি লোড হওয়ার জন্য false রিটার্ন করতে হবে
                 return false
+            }
+
+            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                // ফেসবুক সিকিউরিটি এবং কনফার্মেশন পেজের SSL সার্টিফিকেট এরর বাইপাস করা
+                handler?.proceed()
             }
         }
 
