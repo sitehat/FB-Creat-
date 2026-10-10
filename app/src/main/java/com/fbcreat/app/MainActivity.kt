@@ -1,12 +1,9 @@
 package com.fbcreat.app
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
-import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -33,13 +30,13 @@ class MainActivity : AppCompatActivity() {
         // ফেসবুকের জন্য সঠিক ইউজার এজেন্ট
         webSettings.userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
-        // কুকিজ পারমিশন
+        // কুকিজ এলাউ করা
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
-        // JavaScript থেকে অ্যান্ড্রয়েড ফাংশন কল করার ব্রিজ
-        webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
+        // JavaScript থেকে অ্যান্ড্রয়েড কল করার ব্রিজ
+        webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
@@ -53,7 +50,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // JavaScript ব্রিজ ক্লাস
-    inner class WebAppInterface(private val mContext: MainActivity) {
+    inner class WebAppInterface {
         @JavascriptInterface
         fun loadFacebook(url: String) {
             runOnUiThread {
